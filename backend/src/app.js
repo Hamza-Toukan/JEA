@@ -9,6 +9,7 @@ const { notFoundMiddleware } = require("./core/middleware/notFound.middleware");
 const { errorMiddleware } = require("./core/middleware/error.middleware");
 
 const healthRoutes = require("./modules/health/health.routes");
+const mockWhatsappRoutes = require("./modules/channels/whatsapp/mock/mock-whatsapp.routes");
 
 const app = express();
 
@@ -36,6 +37,7 @@ app.use(
 );
 
 app.use("/api/health", healthRoutes);
+app.use("/api/dev/mock-whatsapp", mockWhatsappRoutes);
 
 app.use(notFoundMiddleware);
 app.use(errorMiddleware);
