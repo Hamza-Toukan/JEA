@@ -14,6 +14,7 @@ const { logger } = require("./core/logger/logger");
 
 const healthRoutes = require("./modules/health/health.routes");
 const mockWhatsappRoutes = require("./modules/channels/whatsapp/mock/mock-whatsapp.routes");
+const conversationRoutes = require("./modules/conversations/conversation.routes");
 
 const app = express();
 
@@ -52,6 +53,7 @@ app.use(
 
 app.use("/api/health", healthRoutes);
 app.use("/api/dev/mock-whatsapp", mockWhatsappRoutes);
+app.use("/api/conversations", conversationRoutes);
 
 app.use(notFoundMiddleware);
 app.use(errorMiddleware);

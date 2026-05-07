@@ -1,3 +1,4 @@
+const mongoose = require("mongoose");
 const { Conversation } = require("./conversation.model");
 const { Message } = require("./message.model");
 
@@ -97,10 +98,106 @@ async function saveBotReply({ conversationId, text, provider = "mock", metadata 
   return outboundMessage;
 }
 
+async function listConversations({
+  page = 1,
+  limit = 20,
+  status,
+  mode,
+  search
+}) {
+  const safePage = Math.max(Number(page) || 1, 1);
+  const safeLimit = Math.min(Math.max(Number(limit) || 20, 1), 100);
+  const skip = (safePage - 1) * safeLimit;
+
+  const filter = {};
+
+  if (status) {
+    filter.status = status;
+  }
+
+  if (mode) {
+    filter.mode = mode;
+  }
+
+  if (search) {
+    filter.customerPhone = {
+      $regex: search,
+      $options: "i"
+    };
+  }
+
+  const [items, total] = await Promise.all([
+    Conversation.find(filter)
+      .sort({ lastMessageAt: -1 })
+      .skip(skip)
+      .limit(safeLimit)
+      .lean(),
+    Conversation.countDocuments(filter)
+  ]);
+
+  return {
+    items,
+    pagination: {
+      page: safePage,
+      limit: safeLimit,
+      total,
+      pages: Math.ceil(total / safeLimit)
+    }
+  };
+}
+
+async function getConversationById(conversationId) {
+  if (!mongoose.Types.ObjectId.isValid(conversationId)) {
+    return null;
+  }
+
+  return Conversation.findById(conversationId).lean();
+}
+
+async function listMessagesByConversationId({
+  conversationId,
+  page = 1,
+  limit = 50
+}) {
+  if (!mongoose.Types.ObjectId.isValid(conversationId)) {
+    return null;
+  }
+
+  const safePage = Math.max(Number(page) || 1, 1);
+  const safeLimit = Math.min(Math.max(Number(limit) || 50, 1), 100);
+  const skip = (safePage - 1) * safeLimit;
+
+  const filter = {
+    conversationId
+  };
+
+  const [items, total] = await Promise.all([
+    Message.find(filter)
+      .sort({ createdAt: 1 })
+      .skip(skip)
+      .limit(safeLimit)
+      .lean(),
+    Message.countDocuments(filter)
+  ]);
+
+  return {
+    items,
+    pagination: {
+      page: safePage,
+      limit: safeLimit,
+      total,
+      pages: Math.ceil(total / safeLimit)
+    }
+  };
+}
+
 module.exports = {
   findOrCreateOpenConversationByPhone,
   createMessage,
   updateConversationLastMessage,
   handleIncomingCustomerMessage,
-  saveBotReply
+  saveBotReply,
+  listConversations,
+  getConversationById,
+  listMessagesByConversationId
 };

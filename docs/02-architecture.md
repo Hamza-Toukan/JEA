@@ -158,3 +158,16 @@ Examples of audit logs later:
 - Admin changed permissions
 - Employee viewed an attachment
 - Conversation handed off to human agent
+
+## Admin Conversations API
+
+The Admin Conversations API is the first backend read API for the future Admin Inbox.
+
+It supports the requirement for a central administrative portal to view and manage incoming conversations.
+
+Current endpoints:
+
+```http
+GET /api/conversations
+GET /api/conversations/:conversationId
+GET /api/conversations/:conversationId/messages
