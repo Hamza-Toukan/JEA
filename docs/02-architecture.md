@@ -171,3 +171,21 @@ Current endpoints:
 GET /api/conversations
 GET /api/conversations/:conversationId
 GET /api/conversations/:conversationId/messages
+
+## Authentication Foundation
+
+The backend uses JWT authentication for MVP admin access.
+
+Current roles:
+
+- admin
+- supervisor
+- agent
+
+Passwords are stored as bcrypt hashes.
+
+Admin APIs are protected using authentication middleware.
+
+The current implementation is role-ready but does not yet include a full permission matrix.
+
+A seed script is used to create the initial admin user.
