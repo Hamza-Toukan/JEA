@@ -1,10 +1,13 @@
 const { z } = require("zod");
-const { processIncomingMessage } = require("../../../orchestration/conversation-orchestrator.service");
+const {
+  processIncomingMessage,
+} = require("../../../orchestration/conversation-orchestrator.service");
+const { logger } = require("../../../../core/logger/logger");
 
 const mockIncomingSchema = z.object({
   from: z.string().min(5, "from is required"),
   text: z.string().optional().default(""),
-  messageId: z.string().optional()
+  messageId: z.string().optional(),
 });
 
 async function receiveMockIncomingMessage(req, res, next) {
@@ -16,20 +19,33 @@ async function receiveMockIncomingMessage(req, res, next) {
         success: false,
         code: "VALIDATION_ERROR",
         message: "Invalid mock WhatsApp payload",
-        details: parsed.error.flatten().fieldErrors
+        details: z.flattenError(parsed.error).fieldErrors,
       });
     }
 
     const { from, text, messageId } = parsed.data;
 
+    logger.info(
+      {
+        requestId: req.requestId,
+        from,
+        hasText: Boolean(text),
+        provider: "mock",
+        messageId: messageId || null,
+      },
+      "Mock WhatsApp incoming message received",
+    );
+
     const result = await processIncomingMessage({
       from,
       text,
       provider: "mock",
-      providerMessageId: messageId || `mock_in_${Date.now()}_${Math.random().toString(36).slice(2)}`,
+      providerMessageId:
+        messageId ||
+        `mock_in_${Date.now()}_${Math.random().toString(36).slice(2)}`,
       metadata: {
-        rawPayload: req.body
-      }
+        rawPayload: req.body,
+      },
     });
 
     return res.status(200).json({
@@ -37,7 +53,7 @@ async function receiveMockIncomingMessage(req, res, next) {
       conversationId: result.conversation._id,
       inboundMessageId: result.inboundMessage._id,
       outboundMessageId: result.outboundMessage._id,
-      reply: result.replyText
+      reply: result.replyText,
     });
   } catch (error) {
     next(error);
@@ -45,5 +61,5 @@ async function receiveMockIncomingMessage(req, res, next) {
 }
 
 module.exports = {
-  receiveMockIncomingMessage
+  receiveMockIncomingMessage,
 };

@@ -1,14 +1,20 @@
 const app = require("./app");
 const { env } = require("./core/config/env");
 const { connectDB } = require("./core/database/db");
+const { logger } = require("./core/logger/logger");
 
 async function bootstrap() {
   await connectDB();
 
   app.listen(env.PORT, () => {
-    console.log(`🚀 JEA Digital Assistant API running on port ${env.PORT}`);
-    console.log(`🌍 Environment: ${env.NODE_ENV}`);
-    console.log(`💬 WhatsApp Provider: ${env.WHATSAPP_PROVIDER}`);
+    logger.info(
+      {
+        port: env.PORT,
+        environment: env.NODE_ENV,
+        whatsappProvider: env.WHATSAPP_PROVIDER
+      },
+      "JEA Digital Assistant API started"
+    );
   });
 }
 

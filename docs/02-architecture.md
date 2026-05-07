@@ -122,3 +122,39 @@ Controllers should:
 - return response
 
 Business logic should live in services and orchestrators.
+
+## Logging Strategy
+
+The backend uses Pino for structured application logging.
+
+Current logging foundation includes:
+
+- Shared logger under `core/logger/logger.js`
+- Request ID middleware
+- HTTP request logging through Morgan streamed into Pino
+- Startup logs
+- Database connection logs
+- Error logs through global error middleware
+- Mock WhatsApp incoming message logs
+
+Each request receives an `X-Request-Id` response header.
+
+Application logs are different from audit logs.
+
+Application logs are used for technical troubleshooting and operations.
+
+Audit logs are used for business/security traceability and will be implemented later as a database-backed module.
+
+Examples of application logs:
+
+- API started
+- MongoDB connected
+- Incoming mock WhatsApp message received
+- Request failed
+
+Examples of audit logs later:
+
+- Employee changed ticket status
+- Admin changed permissions
+- Employee viewed an attachment
+- Conversation handed off to human agent
