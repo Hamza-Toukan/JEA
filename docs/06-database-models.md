@@ -93,20 +93,19 @@ Examples later:
 
 ### Indexes
 
-- customerPhone
-- memberId
-- status
-- mode
-- lastMessageAt
-- customerPhone + status
+- Unique partial index on `customerPhone` where `status` is `open` — at most one open conversation per phone (concurrency-safe with try/create + duplicate-key recovery in the service layer).
+- Compound index on `customerPhone` + `status` for lookups and filters.
+- `lastMessageAt` descending for inbox ordering.
 
 Purpose:
 
 Support efficient queries for:
 
-- finding open conversations by phone
+- finding or creating the single open conversation by phone
 - listing recent conversations
 - filtering by status/mode
+
+Existing deployments: if duplicate open conversations already exist for the same phone, fix or merge them before the partial unique index can be created successfully.
 
 ---
 
@@ -190,6 +189,12 @@ The message ID from the WhatsApp provider.
 
 Important for idempotency and avoiding duplicate messages.
 
+#### correlationInboundMessageId
+
+Optional ObjectId of the inbound message when this document is a bot outbound reply.
+
+Enforces at most one bot reply per inbound message (partial unique index). New writes populate this field; older documents may only have `metadata.inboundMessageId`.
+
 #### messageType
 
 Allowed values:
@@ -210,6 +215,7 @@ Flexible object for raw payloads and future AI/provider data.
 
 - conversationId + createdAt
 - provider + providerMessageId unique sparse
+- correlationInboundMessageId unique partial (bot replies tied to one inbound message)
 
 Purpose of unique provider/providerMessageId:
 
@@ -217,9 +223,15 @@ Avoid duplicate saved messages if a webhook is retried by the provider.
 
 ---
 
-## Notes
+## Idempotency (inbound webhooks)
 
-These models support the first foundation requirement:
+1. **Inbound message row**: `Message` has a sparse unique compound index on `provider` + `providerMessageId`. Retries with the same provider message id do not insert a second inbound document; the service detects the duplicate insert (error code 11000) and loads the existing message.
+
+2. **Outbound bot reply**: Bot outbounds set `correlationInboundMessageId` (and `metadata.inboundMessageId`). If an inbound message is a duplicate retry, the orchestrator looks up an existing outbound bot message for that inbound id and returns it instead of generating a second reply. Concurrent retries that race past that lookup are deduplicated again at insert time via the partial unique index on `correlationInboundMessageId`.
+
+3. **Rare partial failure**: If the first request failed after saving the inbound message but before saving the outbound bot reply, a retry with the same provider message id is treated as a duplicate inbound; the orchestrator finds no prior bot reply and creates one.
+
+---
 
 - full conversation logging
 - context preparation

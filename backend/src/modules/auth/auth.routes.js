@@ -10,10 +10,13 @@ const loginLimiter = rateLimit({
   max: 20,
   standardHeaders: true,
   legacyHeaders: false,
-  message: {
-    success: false,
-    code: "TOO_MANY_LOGIN_ATTEMPTS",
-    message: "Too many login attempts. Please try again later.",
+  handler: (req, res) => {
+    res.status(429).json({
+      success: false,
+      code: "TOO_MANY_LOGIN_ATTEMPTS",
+      message: "Too many login attempts. Please try again later.",
+      requestId: req.requestId,
+    });
   },
 });
 

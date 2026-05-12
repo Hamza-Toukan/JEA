@@ -50,6 +50,12 @@ const messageSchema = new mongoose.Schema(
     metadata: {
       type: mongoose.Schema.Types.Mixed,
       default: {}
+    },
+
+    correlationInboundMessageId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Message",
+      default: null,
     }
   },
   {
@@ -63,6 +69,16 @@ messageSchema.index(
   {
     unique: true,
     sparse: true
+  }
+);
+
+messageSchema.index(
+  { correlationInboundMessageId: 1 },
+  {
+    unique: true,
+    partialFilterExpression: {
+      correlationInboundMessageId: { $exists: true, $ne: null },
+    },
   }
 );
 

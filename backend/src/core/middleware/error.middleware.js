@@ -1,8 +1,16 @@
+const { env } = require("../config/env");
 const { logger } = require("../logger/logger");
 
 function errorMiddleware(error, req, res, next) {
   const statusCode = error.statusCode || 500;
   const code = error.code || "INTERNAL_SERVER_ERROR";
+
+  const isProduction = env.NODE_ENV === "production";
+
+  const message =
+    statusCode >= 500 && isProduction
+      ? "Internal server error"
+      : error.message || "Internal server error";
 
   logger.error(
     {
@@ -12,7 +20,7 @@ function errorMiddleware(error, req, res, next) {
       statusCode,
       code,
       errorMessage: error.message,
-      stack: process.env.NODE_ENV === "production" ? undefined : error.stack
+      stack: error.stack,
     },
     "Request failed"
   );
@@ -20,11 +28,11 @@ function errorMiddleware(error, req, res, next) {
   res.status(statusCode).json({
     success: false,
     code,
-    message: error.message || "Internal server error",
-    requestId: req.requestId
+    message,
+    requestId: req.requestId,
   });
 }
 
 module.exports = {
-  errorMiddleware
+  errorMiddleware,
 };

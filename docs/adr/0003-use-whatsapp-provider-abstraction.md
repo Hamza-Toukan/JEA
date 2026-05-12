@@ -1,9 +1,3 @@
-
----
-
-## 3. `docs/adr/0003-use-whatsapp-provider-abstraction.md`
-
-```md
 # ADR 0003: Use WhatsApp Provider Abstraction
 
 ## Status
@@ -40,3 +34,11 @@ Provider-specific code should stay inside:
 
 ```text
 backend/src/modules/channels/whatsapp/
+```
+
+Core conversation and orchestration logic should work against normalized inbound/outbound events (phone, text, provider ids, metadata), not raw BSP payloads.
+
+## Consequences
+
+- Adding a production provider means a new adapter under `channels/whatsapp/` plus configuration, not a rewrite of conversation storage.
+- The mock provider remains the default development entry point (see ADR 0004).

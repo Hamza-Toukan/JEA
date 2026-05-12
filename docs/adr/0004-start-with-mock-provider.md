@@ -1,9 +1,3 @@
-
----
-
-## 4. `docs/adr/0004-start-with-mock-provider.md`
-
-```md
 # ADR 0004: Start With Mock WhatsApp Provider
 
 ## Status
@@ -33,9 +27,20 @@ Development should not be blocked by:
 
 Start development with a Mock WhatsApp Provider.
 
-The mock provider is used only for local development/testing.
+The mock provider is used for local development and controlled testing.
 
 Current mock endpoint:
 
 ```http
 POST /api/dev/mock-whatsapp/incoming
+```
+
+Security:
+
+- Mock routes are disabled unless `ENABLE_MOCK_WHATSAPP=true`.
+- Outside `NODE_ENV=development`, `MOCK_WHATSAPP_SECRET` is required and must be sent as header `x-mock-whatsapp-secret`.
+
+## Consequences
+
+- Engineers can exercise the full inbound → orchestrator → persistence flow without a real BSP.
+- Production deployments must keep mock disabled unless explicitly required and properly secret-protected.

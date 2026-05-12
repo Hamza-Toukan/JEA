@@ -20,6 +20,7 @@ async function receiveMockIncomingMessage(req, res, next) {
         code: "VALIDATION_ERROR",
         message: "Invalid mock WhatsApp payload",
         details: z.flattenError(parsed.error).fieldErrors,
+        requestId: req.requestId,
       });
     }
 

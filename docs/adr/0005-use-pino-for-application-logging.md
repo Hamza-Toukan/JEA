@@ -26,7 +26,7 @@ Application logs will be used for:
 - startup logs
 - database connection logs
 - incoming provider messages
-- unexpected errors
+- unexpected errors (including full server-side context; never return stack traces to clients)
 - operational debugging
 
 Audit logs will be implemented later as a separate database-backed module.

@@ -1,9 +1,3 @@
-
----
-
-## 2. `docs/adr/0002-use-modular-monolith.md`
-
-```md
 # ADR 0002: Use Modular Monolith
 
 ## Status
@@ -52,3 +46,10 @@ backend/src/
     flows/
     audit/
     reports/
+```
+
+## Consequences
+
+- Teams can grow features inside `modules/` without splitting deployments prematurely.
+- Shared infrastructure stays in `core/` (config, database, middleware, logging).
+- If a module later needs to be extracted, boundaries are already visible in the folder layout.

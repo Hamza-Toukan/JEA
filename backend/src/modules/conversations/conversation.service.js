@@ -1,23 +1,38 @@
 const mongoose = require("mongoose");
 const { Conversation } = require("./conversation.model");
 const { Message } = require("./message.model");
+const { escapeRegex } = require("../../core/utils/escape-regex");
 
 async function findOrCreateOpenConversationByPhone(customerPhone) {
-  let conversation = await Conversation.findOne({
+  const existing = await Conversation.findOne({
     customerPhone,
-    status: "open"
+    status: "open",
   });
 
-  if (!conversation) {
-    conversation = await Conversation.create({
+  if (existing) {
+    return existing;
+  }
+
+  try {
+    return await Conversation.create({
       customerPhone,
       status: "open",
       mode: "bot",
-      lastMessageAt: new Date()
+      lastMessageAt: new Date(),
     });
+  } catch (error) {
+    if (error.code === 11000) {
+      const recovered = await Conversation.findOne({
+        customerPhone,
+        status: "open",
+      });
+      if (!recovered) {
+        throw error;
+      }
+      return recovered;
+    }
+    throw error;
   }
-
-  return conversation;
 }
 
 async function createMessage({
@@ -28,29 +43,85 @@ async function createMessage({
   provider = "mock",
   providerMessageId = null,
   messageType = "text",
-  metadata = {}
+  metadata = {},
+  correlationInboundMessageId = null,
 }) {
-  return Message.create({
-    conversationId,
-    direction,
-    senderType,
-    text,
-    provider,
-    providerMessageId,
-    messageType,
-    metadata
-  });
+  try {
+    const message = await Message.create({
+      conversationId,
+      direction,
+      senderType,
+      text,
+      provider,
+      providerMessageId,
+      messageType,
+      metadata,
+      correlationInboundMessageId,
+    });
+    return { message, isDuplicate: false };
+  } catch (error) {
+    if (error.code === 11000) {
+      let message = null;
+
+      if (correlationInboundMessageId) {
+        message = await Message.findOne({
+          correlationInboundMessageId,
+          senderType: "bot",
+          direction: "outbound",
+        });
+      }
+
+      if (!message && provider && providerMessageId != null) {
+        message = await Message.findOne({
+          provider,
+          providerMessageId,
+        });
+      }
+
+      if (!message) {
+        throw error;
+      }
+
+      return { message, isDuplicate: true };
+    }
+    throw error;
+  }
 }
 
 async function updateConversationLastMessage(conversationId, text) {
+  if (!mongoose.Types.ObjectId.isValid(conversationId)) {
+    return null;
+  }
+
   return Conversation.findByIdAndUpdate(
     conversationId,
     {
       lastMessageText: text || "",
-      lastMessageAt: new Date()
+      lastMessageAt: new Date(),
     },
     { new: true }
   );
+}
+
+async function findExistingBotReplyForInbound(conversationId, inboundMessageId) {
+  if (
+    !mongoose.Types.ObjectId.isValid(conversationId) ||
+    !mongoose.Types.ObjectId.isValid(inboundMessageId)
+  ) {
+    return null;
+  }
+
+  return Message.findOne({
+    conversationId,
+    direction: "outbound",
+    senderType: "bot",
+    $or: [
+      { correlationInboundMessageId: inboundMessageId },
+      { "metadata.inboundMessageId": inboundMessageId },
+    ],
+  })
+    .sort({ createdAt: -1 })
+    .lean();
 }
 
 async function handleIncomingCustomerMessage({
@@ -58,31 +129,42 @@ async function handleIncomingCustomerMessage({
   text,
   provider = "mock",
   providerMessageId = null,
-  metadata = {}
+  metadata = {},
 }) {
   const conversation = await findOrCreateOpenConversationByPhone(customerPhone);
 
-  const inboundMessage = await createMessage({
-    conversationId: conversation._id,
-    direction: "inbound",
-    senderType: "customer",
-    text,
-    provider,
-    providerMessageId,
-    messageType: "text",
-    metadata
-  });
+  const { message: inboundMessage, isDuplicate: inboundWasDuplicate } =
+    await createMessage({
+      conversationId: conversation._id,
+      direction: "inbound",
+      senderType: "customer",
+      text,
+      provider,
+      providerMessageId,
+      messageType: "text",
+      metadata,
+    });
 
-  await updateConversationLastMessage(conversation._id, text);
+  if (!inboundWasDuplicate) {
+    await updateConversationLastMessage(conversation._id, text);
+  }
 
   return {
     conversation,
-    inboundMessage
+    inboundMessage,
+    inboundWasDuplicate,
   };
 }
 
-async function saveBotReply({ conversationId, text, provider = "mock", metadata = {} }) {
-  const outboundMessage = await createMessage({
+async function saveBotReply({
+  conversationId,
+  text,
+  provider = "mock",
+  metadata = {},
+}) {
+  const correlationInboundMessageId = metadata.inboundMessageId || null;
+
+  const { message: outboundMessage, isDuplicate } = await createMessage({
     conversationId,
     direction: "outbound",
     senderType: "bot",
@@ -90,10 +172,13 @@ async function saveBotReply({ conversationId, text, provider = "mock", metadata 
     provider,
     providerMessageId: `mock_out_${Date.now()}_${Math.random().toString(36).slice(2)}`,
     messageType: "text",
-    metadata
+    metadata,
+    correlationInboundMessageId,
   });
 
-  await updateConversationLastMessage(conversationId, text);
+  if (!isDuplicate) {
+    await updateConversationLastMessage(conversationId, text);
+  }
 
   return outboundMessage;
 }
@@ -103,7 +188,7 @@ async function listConversations({
   limit = 20,
   status,
   mode,
-  search
+  search,
 }) {
   const safePage = Math.max(Number(page) || 1, 1);
   const safeLimit = Math.min(Math.max(Number(limit) || 20, 1), 100);
@@ -121,8 +206,8 @@ async function listConversations({
 
   if (search) {
     filter.customerPhone = {
-      $regex: search,
-      $options: "i"
+      $regex: escapeRegex(search),
+      $options: "i",
     };
   }
 
@@ -132,7 +217,7 @@ async function listConversations({
       .skip(skip)
       .limit(safeLimit)
       .lean(),
-    Conversation.countDocuments(filter)
+    Conversation.countDocuments(filter),
   ]);
 
   return {
@@ -141,8 +226,8 @@ async function listConversations({
       page: safePage,
       limit: safeLimit,
       total,
-      pages: Math.ceil(total / safeLimit)
-    }
+      pages: Math.ceil(total / safeLimit),
+    },
   };
 }
 
@@ -157,9 +242,15 @@ async function getConversationById(conversationId) {
 async function listMessagesByConversationId({
   conversationId,
   page = 1,
-  limit = 50
+  limit = 50,
 }) {
   if (!mongoose.Types.ObjectId.isValid(conversationId)) {
+    return null;
+  }
+
+  const conversationExists = await Conversation.exists({ _id: conversationId });
+
+  if (!conversationExists) {
     return null;
   }
 
@@ -168,7 +259,7 @@ async function listMessagesByConversationId({
   const skip = (safePage - 1) * safeLimit;
 
   const filter = {
-    conversationId
+    conversationId,
   };
 
   const [items, total] = await Promise.all([
@@ -177,7 +268,7 @@ async function listMessagesByConversationId({
       .skip(skip)
       .limit(safeLimit)
       .lean(),
-    Message.countDocuments(filter)
+    Message.countDocuments(filter),
   ]);
 
   return {
@@ -186,8 +277,8 @@ async function listMessagesByConversationId({
       page: safePage,
       limit: safeLimit,
       total,
-      pages: Math.ceil(total / safeLimit)
-    }
+      pages: Math.ceil(total / safeLimit),
+    },
   };
 }
 
@@ -195,9 +286,10 @@ module.exports = {
   findOrCreateOpenConversationByPhone,
   createMessage,
   updateConversationLastMessage,
+  findExistingBotReplyForInbound,
   handleIncomingCustomerMessage,
   saveBotReply,
   listConversations,
   getConversationById,
-  listMessagesByConversationId
+  listMessagesByConversationId,
 };

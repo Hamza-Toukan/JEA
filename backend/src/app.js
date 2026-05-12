@@ -57,6 +57,26 @@ app.use("/api/auth", authRoutes);
 app.use("/api/dev/mock-whatsapp", mockWhatsappRoutes);
 app.use("/api/conversations", conversationRoutes);
 
+if (env.ENABLE_MOCK_WHATSAPP === "true") {
+  const hasMockSecret =
+    typeof env.MOCK_WHATSAPP_SECRET === "string" &&
+    env.MOCK_WHATSAPP_SECRET.length > 0;
+
+  if (!hasMockSecret && env.NODE_ENV === "development") {
+    logger.warn(
+      { nodeEnv: env.NODE_ENV },
+      "Mock WhatsApp is enabled without MOCK_WHATSAPP_SECRET — acceptable for local development only"
+    );
+  }
+
+  if (!hasMockSecret && env.NODE_ENV !== "development") {
+    logger.error(
+      { nodeEnv: env.NODE_ENV },
+      "Mock WhatsApp is enabled without MOCK_WHATSAPP_SECRET in a non-development environment — incoming requests will be rejected"
+    );
+  }
+}
+
 app.use(notFoundMiddleware);
 app.use(errorMiddleware);
 

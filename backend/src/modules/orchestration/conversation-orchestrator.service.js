@@ -1,6 +1,7 @@
 const {
   handleIncomingCustomerMessage,
-  saveBotReply
+  saveBotReply,
+  findExistingBotReplyForInbound,
 } = require("../conversations/conversation.service");
 
 function buildDefaultBotReply(text) {
@@ -25,14 +26,37 @@ function buildDefaultBotReply(text) {
   return "أهلًا بك في المساعد الرقمي لنقابة المهندسين. وصلت رسالتك، وسيتم تطوير الردود الذكية وقاعدة المعرفة في المرحلة القادمة.";
 }
 
-async function processIncomingMessage({ from, text, provider = "mock", providerMessageId, metadata = {} }) {
-  const { conversation, inboundMessage } = await handleIncomingCustomerMessage({
-    customerPhone: from,
-    text,
-    provider,
-    providerMessageId,
-    metadata
-  });
+async function processIncomingMessage({
+  from,
+  text,
+  provider = "mock",
+  providerMessageId,
+  metadata = {},
+}) {
+  const { conversation, inboundMessage, inboundWasDuplicate } =
+    await handleIncomingCustomerMessage({
+      customerPhone: from,
+      text,
+      provider,
+      providerMessageId,
+      metadata,
+    });
+
+  if (inboundWasDuplicate) {
+    const existingOutbound = await findExistingBotReplyForInbound(
+      conversation._id,
+      inboundMessage._id
+    );
+
+    if (existingOutbound) {
+      return {
+        conversation,
+        inboundMessage,
+        outboundMessage: existingOutbound,
+        replyText: existingOutbound.text || "",
+      };
+    }
+  }
 
   const replyText = buildDefaultBotReply(text);
 
@@ -42,18 +66,18 @@ async function processIncomingMessage({ from, text, provider = "mock", providerM
     provider,
     metadata: {
       generatedBy: "default-rule-orchestrator",
-      inboundMessageId: inboundMessage._id
-    }
+      inboundMessageId: inboundMessage._id,
+    },
   });
 
   return {
     conversation,
     inboundMessage,
     outboundMessage,
-    replyText
+    replyText,
   };
 }
 
 module.exports = {
-  processIncomingMessage
+  processIncomingMessage,
 };

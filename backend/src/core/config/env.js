@@ -22,6 +22,10 @@ const envSchema = z.object({
   ADMIN_SEED_NAME: z.string().optional(),
   ADMIN_SEED_EMAIL: z.string().email().optional(),
   ADMIN_SEED_PASSWORD: z.string().min(8).optional(),
+
+  ENABLE_MOCK_WHATSAPP: z.enum(["true", "false"]).default("false"),
+
+  MOCK_WHATSAPP_SECRET: z.string().optional(),
 });
 
 const parsed = envSchema.safeParse(process.env);

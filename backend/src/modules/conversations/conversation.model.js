@@ -5,7 +5,6 @@ const conversationSchema = new mongoose.Schema(
     customerPhone: {
       type: String,
       required: true,
-      index: true,
       trim: true
     },
 
@@ -61,6 +60,13 @@ const conversationSchema = new mongoose.Schema(
   }
 );
 
+conversationSchema.index(
+  { customerPhone: 1 },
+  {
+    unique: true,
+    partialFilterExpression: { status: "open" },
+  }
+);
 conversationSchema.index({ customerPhone: 1, status: 1 });
 conversationSchema.index({ lastMessageAt: -1 });
 
