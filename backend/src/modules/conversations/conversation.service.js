@@ -1,7 +1,18 @@
 const mongoose = require("mongoose");
 const { Conversation } = require("./conversation.model");
 const { Message } = require("./message.model");
+const { User } = require("../users/user.model");
 const { escapeRegex } = require("../../core/utils/escape-regex");
+const { validateObjectId } = require("../../core/utils/validate-object-id");
+const { generateMockMessageId } = require("../../core/utils/generate-mock-message-id");
+const { logger } = require("../../core/logger/logger");
+
+function httpError(statusCode, code, message) {
+  const err = new Error(message);
+  err.statusCode = statusCode;
+  err.code = code;
+  return err;
+}
 
 async function findOrCreateOpenConversationByPhone(customerPhone) {
   const existing = await Conversation.findOne({
@@ -89,7 +100,7 @@ async function createMessage({
 }
 
 async function updateConversationLastMessage(conversationId, text) {
-  if (!mongoose.Types.ObjectId.isValid(conversationId)) {
+  if (!validateObjectId(conversationId)) {
     return null;
   }
 
@@ -105,8 +116,8 @@ async function updateConversationLastMessage(conversationId, text) {
 
 async function findExistingBotReplyForInbound(conversationId, inboundMessageId) {
   if (
-    !mongoose.Types.ObjectId.isValid(conversationId) ||
-    !mongoose.Types.ObjectId.isValid(inboundMessageId)
+    !validateObjectId(conversationId) ||
+    !validateObjectId(inboundMessageId)
   ) {
     return null;
   }
@@ -170,7 +181,7 @@ async function saveBotReply({
     senderType: "bot",
     text,
     provider,
-    providerMessageId: `mock_out_${Date.now()}_${Math.random().toString(36).slice(2)}`,
+    providerMessageId: generateMockMessageId(),
     messageType: "text",
     metadata,
     correlationInboundMessageId,
@@ -216,6 +227,7 @@ async function listConversations({
       .sort({ lastMessageAt: -1 })
       .skip(skip)
       .limit(safeLimit)
+      .populate("assignedTo", "name email role status")
       .lean(),
     Conversation.countDocuments(filter),
   ]);
@@ -232,11 +244,141 @@ async function listConversations({
 }
 
 async function getConversationById(conversationId) {
-  if (!mongoose.Types.ObjectId.isValid(conversationId)) {
+  if (!validateObjectId(conversationId)) {
     return null;
   }
 
-  return Conversation.findById(conversationId).lean();
+  return Conversation.findById(conversationId)
+    .populate("assignedTo", "name email role status")
+    .lean();
+}
+
+async function assignConversation({
+  conversationId,
+  assignedToUserId,
+  requestId,
+  actorUserId,
+}) {
+  if (!validateObjectId(conversationId)) {
+    throw httpError(400, "VALIDATION_ERROR", "Invalid conversation id");
+  }
+
+  if (!validateObjectId(assignedToUserId)) {
+    throw httpError(400, "VALIDATION_ERROR", "Invalid assignee user id");
+  }
+
+  const assignee = await User.findById(assignedToUserId).select("_id status");
+
+  if (!assignee) {
+    throw httpError(404, "ASSIGNEE_NOT_FOUND", "Assignee user not found");
+  }
+
+  if (assignee.status !== "active") {
+    throw httpError(
+      400,
+      "ASSIGNEE_INACTIVE",
+      "Assignee user is not active and cannot be assigned"
+    );
+  }
+
+  const updated = await Conversation.findByIdAndUpdate(
+    conversationId,
+    { assignedTo: assignedToUserId },
+    { new: true }
+  )
+    .populate("assignedTo", "name email role status")
+    .lean();
+
+  if (!updated) {
+    throw httpError(404, "CONVERSATION_NOT_FOUND", "Conversation not found");
+  }
+
+  logger.info(
+    {
+      requestId,
+      actorUserId: actorUserId ? String(actorUserId) : undefined,
+      conversationId: String(conversationId),
+      assignedToUserId: String(assignedToUserId),
+    },
+    "Conversation assigned"
+  );
+
+  return updated;
+}
+
+async function updateConversationMode({ conversationId, mode, requestId }) {
+  if (!validateObjectId(conversationId)) {
+    throw httpError(400, "VALIDATION_ERROR", "Invalid conversation id");
+  }
+
+  const updated = await Conversation.findByIdAndUpdate(
+    conversationId,
+    { mode },
+    { new: true }
+  )
+    .populate("assignedTo", "name email role status")
+    .lean();
+
+  if (!updated) {
+    throw httpError(404, "CONVERSATION_NOT_FOUND", "Conversation not found");
+  }
+
+  logger.info(
+    {
+      requestId,
+      conversationId: String(conversationId),
+      mode,
+    },
+    "Conversation mode updated"
+  );
+
+  return updated;
+}
+
+async function updateConversationStatus({
+  conversationId,
+  status,
+  requestId,
+}) {
+  if (!validateObjectId(conversationId)) {
+    throw httpError(400, "VALIDATION_ERROR", "Invalid conversation id");
+  }
+
+  let updated;
+
+  try {
+    updated = await Conversation.findByIdAndUpdate(
+      conversationId,
+      { status },
+      { new: true }
+    )
+      .populate("assignedTo", "name email role status")
+      .lean();
+  } catch (error) {
+    if (error.code === 11000) {
+      throw httpError(
+        409,
+        "OPEN_CONVERSATION_CONFLICT",
+        "Another open conversation already exists for this customer phone"
+      );
+    }
+    throw error;
+  }
+
+  if (!updated) {
+    throw httpError(404, "CONVERSATION_NOT_FOUND", "Conversation not found");
+  }
+
+  logger.info(
+    {
+      requestId,
+      conversationId: String(conversationId),
+      status,
+    },
+    "Conversation status updated"
+  );
+
+  return updated;
 }
 
 async function listMessagesByConversationId({
@@ -244,7 +386,7 @@ async function listMessagesByConversationId({
   page = 1,
   limit = 50,
 }) {
-  if (!mongoose.Types.ObjectId.isValid(conversationId)) {
+  if (!validateObjectId(conversationId)) {
     return null;
   }
 
@@ -292,4 +434,7 @@ module.exports = {
   listConversations,
   getConversationById,
   listMessagesByConversationId,
+  assignConversation,
+  updateConversationMode,
+  updateConversationStatus,
 };
