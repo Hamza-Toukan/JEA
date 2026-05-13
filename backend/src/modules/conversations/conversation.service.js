@@ -172,8 +172,11 @@ async function saveBotReply({
   text,
   provider = "mock",
   metadata = {},
+  providerMessageId: providerMessageIdOpt,
 }) {
   const correlationInboundMessageId = metadata.inboundMessageId || null;
+
+  const finalMessageId = providerMessageIdOpt || generateMockMessageId();
 
   const { message: outboundMessage, isDuplicate } = await createMessage({
     conversationId,
@@ -181,7 +184,7 @@ async function saveBotReply({
     senderType: "bot",
     text,
     provider,
-    providerMessageId: generateMockMessageId(),
+    providerMessageId: finalMessageId,
     messageType: "text",
     metadata,
     correlationInboundMessageId,

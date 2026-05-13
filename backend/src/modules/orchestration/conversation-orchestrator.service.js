@@ -3,6 +3,7 @@ const {
   saveBotReply,
   findExistingBotReplyForInbound,
 } = require("../conversations/conversation.service");
+const { logger } = require("../../core/logger/logger");
 
 function buildDefaultBotReply(text) {
   const normalizedText = (text || "").trim();
@@ -56,6 +57,22 @@ async function processIncomingMessage({
         replyText: existingOutbound.text || "",
       };
     }
+  }
+
+  if (conversation.mode === "human") {
+    logger.info(
+      {
+        conversationId: String(conversation._id),
+      },
+      `[Orchestrator] Human mode active for conversation ${conversation._id}, skipping bot reply`
+    );
+
+    return {
+      conversation,
+      inboundMessage,
+      outboundMessage: null,
+      replyText: "",
+    };
   }
 
   const replyText = buildDefaultBotReply(text);

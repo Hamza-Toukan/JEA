@@ -53,7 +53,9 @@ async function receiveMockIncomingMessage(req, res, next) {
       success: true,
       conversationId: result.conversation._id,
       inboundMessageId: result.inboundMessage._id,
-      outboundMessageId: result.outboundMessage._id,
+      outboundMessageId: result.outboundMessage
+        ? result.outboundMessage._id
+        : null,
       reply: result.replyText,
     });
   } catch (error) {
