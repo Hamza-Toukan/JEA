@@ -14,6 +14,7 @@ const { logger } = require("./core/logger/logger");
 
 const healthRoutes = require("./modules/health/health.routes");
 const mockWhatsappRoutes = require("./modules/channels/whatsapp/mock/mock-whatsapp.routes");
+const twilioWhatsappRoutes = require("./modules/channels/whatsapp/twilio/twilio.routes");
 const conversationRoutes = require("./modules/conversations/conversation.routes");
 const authRoutes = require("./modules/auth/auth.routes");
 
@@ -55,6 +56,7 @@ app.use(
 app.use("/api/health", healthRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/dev/mock-whatsapp", mockWhatsappRoutes);
+app.use("/api/whatsapp/twilio", twilioWhatsappRoutes);
 app.use("/api/conversations", conversationRoutes);
 
 if (env.ENABLE_MOCK_WHATSAPP === "true") {

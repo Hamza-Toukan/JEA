@@ -3,6 +3,7 @@ const {
   saveBotReply,
   findExistingBotReplyForInbound,
 } = require("../conversations/conversation.service");
+const { sendTwilioMessage } = require("../channels/whatsapp/twilio/twilio.service");
 const { logger } = require("../../core/logger/logger");
 
 function buildDefaultBotReply(text) {
@@ -86,6 +87,29 @@ async function processIncomingMessage({
       inboundMessageId: inboundMessage._id,
     },
   });
+
+  if (provider === "twilio" && replyText && String(replyText).trim()) {
+    try {
+      const twilioResult = await sendTwilioMessage(from, replyText);
+      if (twilioResult && twilioResult.sid) {
+        logger.info(
+          {
+            messageSid: twilioResult.sid,
+            conversationId: String(conversation._id),
+          },
+          "Twilio outbound message sent"
+        );
+      }
+    } catch (error) {
+      logger.error(
+        {
+          conversationId: String(conversation._id),
+          errorMessage: error.message,
+        },
+        "Twilio outbound message failed"
+      );
+    }
+  }
 
   return {
     conversation,

@@ -26,6 +26,10 @@ const envSchema = z.object({
   ENABLE_MOCK_WHATSAPP: z.enum(["true", "false"]).default("false"),
 
   MOCK_WHATSAPP_SECRET: z.string().optional(),
+
+  TWILIO_ACCOUNT_SID: z.string().optional(),
+  TWILIO_AUTH_TOKEN: z.string().optional(),
+  TWILIO_WHATSAPP_NUMBER: z.string().optional(),
 });
 
 const parsed = envSchema.safeParse(process.env);
