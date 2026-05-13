@@ -10,11 +10,9 @@
 
 ### Success
 
-Most endpoints return JSON with `success: true` and optional `requestId`.
+JSON responses typically include `success: true`, optional `data`, optional `pagination`, and `requestId`.
 
 ### Errors
-
-All error responses use this shape:
 
 ```json
 {
@@ -25,9 +23,7 @@ All error responses use this shape:
 }
 ```
 
-Validation errors may also include `details` (field errors from Zod).
-
-Client responses never include stack traces. Server-side errors are logged with full context (including stack) via Pino.
+Validation failures may include `details` (Zod `fieldErrors`). Stack traces are never returned to clients; errors are logged server-side.
 
 ---
 
@@ -35,7 +31,19 @@ Client responses never include stack traces. Server-side errors are logged with 
 
 ### GET /api/health
 
-Liveness / basic health. No authentication.
+No authentication.
+
+**200 example**
+
+```json
+{
+  "success": true,
+  "service": "JEA Digital Assistant API",
+  "status": "healthy",
+  "timestamp": "2026-05-12T12:00:00.000Z",
+  "requestId": "..."
+}
+```
 
 ---
 
@@ -43,28 +51,28 @@ Liveness / basic health. No authentication.
 
 ### POST /api/auth/login
 
-Authenticates an admin portal user. Rate-limited (429 with the same error envelope including `requestId`).
+Rate limited (429 uses the same error envelope including `requestId`).
 
-Request body:
+**Request**
 
 ```json
 {
   "email": "admin@example.com",
-  "password": "your-secure-password"
+  "password": "your-password"
 }
 ```
 
-Success `200`:
+**200 example**
 
 ```json
 {
   "success": true,
   "data": {
-    "token": "jwt...",
+    "token": "<jwt>",
     "user": {
       "id": "...",
-      "name": "...",
-      "email": "...",
+      "name": "Admin",
+      "email": "admin@example.com",
       "role": "admin",
       "status": "active"
     }
@@ -73,74 +81,195 @@ Success `200`:
 }
 ```
 
-Use the token as:
+Use:
 
 ```http
-Authorization: Bearer <token>
+Authorization: Bearer <jwt>
 ```
+
+**400** `VALIDATION_ERROR` — invalid body.
+
+**401** `INVALID_CREDENTIALS` — wrong email/password.
+
+**403** `USER_INACTIVE` — account disabled.
 
 ---
 
-## Conversations (admin read API)
+## Conversations (inbox)
 
-All routes require a valid JWT and role in `admin` | `supervisor` | `agent`.
+All routes require `Authorization: Bearer <jwt>`.
+
+Read routes require role **admin**, **supervisor**, or **agent**.
 
 ### GET /api/conversations
 
-Query parameters (optional):
+**Query (optional):** `page`, `limit`, `status` (`open` | `closed`), `mode` (`bot` | `human`), `search` (substring on `customerPhone`, regex metacharacters escaped server-side).
 
-- `page`, `limit` — pagination (`limit` capped server-side)
-- `status` — `open` | `closed`
-- `mode` — `bot` | `human`
-- `search` — substring match on `customerPhone` (regex-special characters escaped server-side)
-
-### GET /api/conversations/:conversationId
-
-Returns one conversation or `404` with `CONVERSATION_NOT_FOUND`.
-
-### GET /api/conversations/:conversationId/messages
-
-Paginated messages for a conversation. Returns `404` if the conversation does not exist.
-
----
-
-## Mock WhatsApp (development / controlled testing)
-
-### POST /api/dev/mock-whatsapp/incoming
-
-Disabled unless `ENABLE_MOCK_WHATSAPP=true`.
-
-Headers:
-
-- `x-mock-whatsapp-secret` — required in non-development when mock is enabled; optional in development unless `MOCK_WHATSAPP_SECRET` is set (then required to match).
-
-Body (JSON):
+**200 example**
 
 ```json
 {
-  "from": "962790000000",
-  "text": "optional message text",
-  "messageId": "optional stable id for idempotency tests"
+  "success": true,
+  "data": [
+    {
+      "_id": "...",
+      "customerPhone": "9627...",
+      "status": "open",
+      "mode": "bot",
+      "assignedTo": {
+        "_id": "...",
+        "name": "Agent",
+        "email": "agent@example.com",
+        "role": "agent",
+        "status": "active"
+      },
+      "lastMessageText": "...",
+      "lastMessageAt": "...",
+      "createdAt": "...",
+      "updatedAt": "..."
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "limit": 20,
+    "total": 1,
+    "pages": 1
+  },
+  "requestId": "..."
 }
 ```
 
-Success `200` includes `conversationId`, `inboundMessageId`, `outboundMessageId`, and `reply`.
+### GET /api/conversations/:conversationId
 
-**Idempotency:** the same `messageId` (provider message id) for the same provider must not create a second inbound row or a second bot reply; retries return the same stored outbound reply when one already exists.
+**400** `VALIDATION_ERROR` — invalid ObjectId.
+
+**404** `CONVERSATION_NOT_FOUND`.
+
+**200** — single conversation document (`assignedTo` populated when set).
+
+### GET /api/conversations/:conversationId/messages
+
+Paginated messages. **404** if conversation does not exist.
 
 ---
 
-## Error codes (non-exhaustive)
+## Inbox management (PATCH)
 
-| Code | Typical HTTP |
-|------|----------------|
+### PATCH /api/conversations/:conversationId/assign
+
+**Roles:** **admin** only.
+
+Assigns the conversation to an internal user (`User` must exist and be `active`).
+
+**Request**
+
+```json
+{
+  "assignedTo": "64b0123456789abcdef01234"
+}
+```
+
+`assignedTo` must be a valid MongoDB ObjectId string.
+
+**200 example**
+
+```json
+{
+  "success": true,
+  "data": {
+    "_id": "...",
+    "customerPhone": "...",
+    "assignedTo": {
+      "_id": "64b0123456789abcdef01234",
+      "name": "Agent",
+      "email": "agent@example.com",
+      "role": "agent",
+      "status": "active"
+    },
+    "status": "open",
+    "mode": "bot",
+    "updatedAt": "..."
+  },
+  "requestId": "..."
+}
+```
+
+**Errors**
+
+| HTTP | code | When |
+|------|------|------|
+| 400 | `VALIDATION_ERROR` | Invalid `conversationId` or body |
+| 403 | `FORBIDDEN` | Non-admin user |
+| 404 | `ASSIGNEE_NOT_FOUND` | User id does not exist |
+| 400 | `ASSIGNEE_INACTIVE` | User exists but `status` is not `active` |
+| 404 | `CONVERSATION_NOT_FOUND` | Conversation id not found |
+
+---
+
+### PATCH /api/conversations/:conversationId/mode
+
+**Roles:** admin, supervisor, agent.
+
+**Request**
+
+```json
+{
+  "mode": "human"
+}
+```
+
+Allowed: `human` | `bot`.
+
+**200** — same envelope as assign (`data` is updated conversation).
+
+**400** `VALIDATION_ERROR` — invalid id or body.
+
+**404** `CONVERSATION_NOT_FOUND`.
+
+---
+
+### PATCH /api/conversations/:conversationId/status
+
+**Roles:** admin, supervisor, agent.
+
+**Request**
+
+```json
+{
+  "status": "closed"
+}
+```
+
+Allowed: `open` | `closed`.
+
+**200** — updated conversation.
+
+**400** `VALIDATION_ERROR` — invalid id or body.
+
+**404** `CONVERSATION_NOT_FOUND`.
+
+**409** `OPEN_CONVERSATION_CONFLICT` — reopening (`status: open`) would violate the partial unique index (another conversation for the same `customerPhone` is already `open`). Rare in normal flows.
+
+---
+
+## Common error codes
+
+| Code | HTTP |
+|------|------|
 | `VALIDATION_ERROR` | 400 |
 | `UNAUTHORIZED` | 401 |
 | `INVALID_TOKEN` | 401 |
 | `FORBIDDEN` | 403 |
-| `MOCK_DISABLED` | 403 |
 | `CONVERSATION_NOT_FOUND` | 404 |
-| `ROUTE_NOT_FOUND` | 404 |
+| `ASSIGNEE_NOT_FOUND` | 404 |
+| `ASSIGNEE_INACTIVE` | 400 |
+| `OPEN_CONVERSATION_CONFLICT` | 409 |
 | `TOO_MANY_LOGIN_ATTEMPTS` | 429 |
-| `MOCK_MISCONFIGURED` | 503 |
+| `ROUTE_NOT_FOUND` | 404 |
 | `INTERNAL_SERVER_ERROR` | 500 |
+
+---
+
+## Idempotency note (messages / webhooks)
+
+Inbound WhatsApp deduplication and bot reply idempotency (when a channel module is present) rely on provider message ids and optional correlation fields on `Message`; see `docs/06-database-models.md` when those flows are enabled.
