@@ -227,6 +227,7 @@ async function listConversations({
 
   const [items, total] = await Promise.all([
     Conversation.find(filter)
+      .select("-internalNotes")
       .sort({ lastMessageAt: -1 })
       .skip(skip)
       .limit(safeLimit)
@@ -253,7 +254,108 @@ async function getConversationById(conversationId) {
 
   return Conversation.findById(conversationId)
     .populate("assignedTo", "name email role status")
+    .populate("internalNotes.author", "name email role")
     .lean();
+}
+
+async function addInternalNoteToConversation({
+  conversationId,
+  note,
+  authorUserId,
+  requestId,
+}) {
+  if (!validateObjectId(conversationId)) {
+    throw httpError(400, "VALIDATION_ERROR", "Invalid conversation id");
+  }
+
+  if (!validateObjectId(authorUserId)) {
+    throw httpError(400, "VALIDATION_ERROR", "Invalid author user id");
+  }
+
+  const entry = {
+    note,
+    author: authorUserId,
+    createdAt: new Date(),
+  };
+
+  const updated = await Conversation.findByIdAndUpdate(
+    conversationId,
+    { $push: { internalNotes: entry } },
+    { new: true }
+  )
+    .populate("assignedTo", "name email role status")
+    .populate("internalNotes.author", "name email role")
+    .lean();
+
+  if (!updated) {
+    throw httpError(404, "CONVERSATION_NOT_FOUND", "Conversation not found");
+  }
+
+  logger.info(
+    {
+      requestId,
+      conversationId: String(conversationId),
+      authorUserId: String(authorUserId),
+    },
+    "Internal conversation note added"
+  );
+
+  return updated;
+}
+
+async function updateTicketStatus({
+  conversationId,
+  ticketStatus,
+  priority,
+  requestId,
+}) {
+  if (!validateObjectId(conversationId)) {
+    throw httpError(400, "VALIDATION_ERROR", "Invalid conversation id");
+  }
+
+  const update = { ticketStatus };
+  if (priority !== undefined) {
+    update.priority = priority;
+  }
+  if (ticketStatus === "closed") {
+    update.status = "closed";
+  }
+
+  let updated;
+
+  try {
+    updated = await Conversation.findByIdAndUpdate(conversationId, update, {
+      new: true,
+    })
+      .populate("assignedTo", "name email role status")
+      .populate("internalNotes.author", "name email role")
+      .lean();
+  } catch (error) {
+    if (error.code === 11000) {
+      throw httpError(
+        409,
+        "OPEN_CONVERSATION_CONFLICT",
+        "Another open conversation already exists for this customer phone"
+      );
+    }
+    throw error;
+  }
+
+  if (!updated) {
+    throw httpError(404, "CONVERSATION_NOT_FOUND", "Conversation not found");
+  }
+
+  logger.info(
+    {
+      requestId,
+      conversationId: String(conversationId),
+      ticketStatus,
+      priority: priority !== undefined ? priority : undefined,
+    },
+    "Conversation ticket status updated"
+  );
+
+  return updated;
 }
 
 async function assignConversation({
@@ -290,6 +392,7 @@ async function assignConversation({
     { new: true }
   )
     .populate("assignedTo", "name email role status")
+    .populate("internalNotes.author", "name email role")
     .lean();
 
   if (!updated) {
@@ -320,6 +423,7 @@ async function updateConversationMode({ conversationId, mode, requestId }) {
     { new: true }
   )
     .populate("assignedTo", "name email role status")
+    .populate("internalNotes.author", "name email role")
     .lean();
 
   if (!updated) {
@@ -347,15 +451,21 @@ async function updateConversationStatus({
     throw httpError(400, "VALIDATION_ERROR", "Invalid conversation id");
   }
 
+  const update = { status };
+  if (status === "closed") {
+    update.ticketStatus = "closed";
+  }
+
   let updated;
 
   try {
     updated = await Conversation.findByIdAndUpdate(
       conversationId,
-      { status },
+      update,
       { new: true }
     )
       .populate("assignedTo", "name email role status")
+      .populate("internalNotes.author", "name email role")
       .lean();
   } catch (error) {
     if (error.code === 11000) {
@@ -440,4 +550,6 @@ module.exports = {
   assignConversation,
   updateConversationMode,
   updateConversationStatus,
+  addInternalNoteToConversation,
+  updateTicketStatus,
 };

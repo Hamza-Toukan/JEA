@@ -7,6 +7,8 @@ const {
   assignConversation,
   updateConversationMode,
   updateConversationStatus,
+  addInternalNoteToConversation,
+  updateTicketStatus,
 } = require("./conversation.service");
 
 const objectIdString = z
@@ -26,6 +28,15 @@ const modeBodySchema = z.object({
 
 const statusBodySchema = z.object({
   status: z.enum(["open", "closed"]),
+});
+
+const internalNoteBodySchema = z.object({
+  note: z.string().trim().min(1).max(8000),
+});
+
+const ticketStatusBodySchema = z.object({
+  ticketStatus: z.enum(["new", "open", "pending", "resolved", "closed"]),
+  priority: z.enum(["low", "medium", "high"]).optional(),
 });
 
 const listConversationsQuerySchema = z.object({
@@ -276,6 +287,90 @@ async function patchConversationStatus(req, res, next) {
   }
 }
 
+async function postConversationInternalNote(req, res, next) {
+  try {
+    const { conversationId } = req.params;
+
+    if (!validateObjectId(conversationId)) {
+      return res.status(400).json({
+        success: false,
+        code: "VALIDATION_ERROR",
+        message: "Invalid conversation id",
+        requestId: req.requestId,
+      });
+    }
+
+    const parsed = internalNoteBodySchema.safeParse(req.body);
+
+    if (!parsed.success) {
+      return res.status(400).json({
+        success: false,
+        code: "VALIDATION_ERROR",
+        message: "Invalid internal note payload",
+        details: z.flattenError(parsed.error).fieldErrors,
+        requestId: req.requestId,
+      });
+    }
+
+    const data = await addInternalNoteToConversation({
+      conversationId,
+      note: parsed.data.note,
+      authorUserId: req.user._id,
+      requestId: req.requestId,
+    });
+
+    return res.status(201).json({
+      success: true,
+      data,
+      requestId: req.requestId,
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function patchConversationTicketStatus(req, res, next) {
+  try {
+    const { conversationId } = req.params;
+
+    if (!validateObjectId(conversationId)) {
+      return res.status(400).json({
+        success: false,
+        code: "VALIDATION_ERROR",
+        message: "Invalid conversation id",
+        requestId: req.requestId,
+      });
+    }
+
+    const parsed = ticketStatusBodySchema.safeParse(req.body);
+
+    if (!parsed.success) {
+      return res.status(400).json({
+        success: false,
+        code: "VALIDATION_ERROR",
+        message: "Invalid ticket status payload",
+        details: z.flattenError(parsed.error).fieldErrors,
+        requestId: req.requestId,
+      });
+    }
+
+    const data = await updateTicketStatus({
+      conversationId,
+      ticketStatus: parsed.data.ticketStatus,
+      priority: parsed.data.priority,
+      requestId: req.requestId,
+    });
+
+    return res.status(200).json({
+      success: true,
+      data,
+      requestId: req.requestId,
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
 module.exports = {
   getConversations,
   getConversation,
@@ -283,4 +378,6 @@ module.exports = {
   patchAssignConversation,
   patchConversationMode,
   patchConversationStatus,
+  postConversationInternalNote,
+  patchConversationTicketStatus,
 };

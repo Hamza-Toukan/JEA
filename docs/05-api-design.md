@@ -97,13 +97,19 @@ Authorization: Bearer <jwt>
 
 ## Conversations (inbox)
 
-All routes require `Authorization: Bearer <jwt>`.
+All routes require:
 
-Read routes require role **admin**, **supervisor**, or **agent**.
+```http
+Authorization: Bearer <jwt>
+```
+
+Read routes and ticketing/note routes below require role **admin**, **supervisor**, or **agent** (except **assign**, which is **admin** only).
 
 ### GET /api/conversations
 
 **Query (optional):** `page`, `limit`, `status` (`open` | `closed`), `mode` (`bot` | `human`), `search` (substring on `customerPhone`, regex metacharacters escaped server-side).
+
+List responses **omit** `internalNotes` (staff-only; use `GET /api/conversations/:conversationId` for detail including notes).
 
 **200 example**
 
@@ -115,6 +121,9 @@ Read routes require role **admin**, **supervisor**, or **agent**.
       "_id": "...",
       "customerPhone": "9627...",
       "status": "open",
+      "ticketNumber": "JEA-20260512-0001",
+      "ticketStatus": "open",
+      "priority": "medium",
       "mode": "bot",
       "assignedTo": {
         "_id": "...",
@@ -145,7 +154,7 @@ Read routes require role **admin**, **supervisor**, or **agent**.
 
 **404** `CONVERSATION_NOT_FOUND`.
 
-**200** — single conversation document (`assignedTo` populated when set).
+**200** — single conversation document (`assignedTo` populated when set). Includes ticket fields (`ticketNumber`, `ticketStatus`, `priority`) and `internalNotes` (each note’s `author` populated with `name`, `email`, `role`). Notes are never sent to WhatsApp or used for bot replies.
 
 ### GET /api/conversations/:conversationId/messages
 
@@ -153,7 +162,7 @@ Paginated messages. **404** if conversation does not exist.
 
 ---
 
-## Inbox management (PATCH)
+## Inbox management
 
 ### PATCH /api/conversations/:conversationId/assign
 
@@ -249,6 +258,143 @@ Allowed: `open` | `closed`.
 **404** `CONVERSATION_NOT_FOUND`.
 
 **409** `OPEN_CONVERSATION_CONFLICT` — reopening (`status: open`) would violate the partial unique index (another conversation for the same `customerPhone` is already `open`). Rare in normal flows.
+
+Closing the conversation (`status: closed`) also sets **`ticketStatus`** to **`closed`**.
+
+---
+
+### POST /api/conversations/:conversationId/notes
+
+**Roles:** admin, supervisor, agent.
+
+Appends a **staff-only** internal note. Does not create a `Message`, does not trigger outbound WhatsApp, and is not used by the bot/orchestrator.
+
+**Headers**
+
+```http
+Authorization: Bearer <jwt>
+Content-Type: application/json
+```
+
+**Request**
+
+```json
+{
+  "note": "Member called back; waiting for document scan."
+}
+```
+
+- `note` — required string, trimmed, length **1–8000** characters.
+
+**201 example**
+
+```json
+{
+  "success": true,
+  "data": {
+    "_id": "...",
+    "customerPhone": "...",
+    "ticketNumber": "JEA-20260512-0001",
+    "ticketStatus": "open",
+    "priority": "medium",
+    "internalNotes": [
+      {
+        "note": "Member called back; waiting for document scan.",
+        "author": {
+          "_id": "...",
+          "name": "Agent",
+          "email": "agent@example.com",
+          "role": "agent"
+        },
+        "createdAt": "2026-05-12T14:30:00.000Z"
+      }
+    ],
+    "status": "open",
+    "mode": "bot",
+    "updatedAt": "..."
+  },
+  "requestId": "..."
+}
+```
+
+**Errors**
+
+| HTTP | code | When |
+|------|------|------|
+| 400 | `VALIDATION_ERROR` | Invalid `conversationId` or body (including empty or overlong `note`) |
+| 401 | `UNAUTHORIZED` / `INVALID_TOKEN` | Missing or invalid JWT |
+| 403 | `FORBIDDEN` | Authenticated user lacks admin, supervisor, or agent role |
+| 404 | `CONVERSATION_NOT_FOUND` | Conversation id not found |
+
+**400 validation example** (same envelope as other Zod failures)
+
+```json
+{
+  "success": false,
+  "code": "VALIDATION_ERROR",
+  "message": "Invalid internal note payload",
+  "details": {
+    "note": ["String must contain at least 1 character(s)"]
+  },
+  "requestId": "..."
+}
+```
+
+---
+
+### PATCH /api/conversations/:conversationId/ticket-status
+
+**Roles:** admin, supervisor, agent.
+
+Updates workflow **`ticketStatus`** and optionally **`priority`**. When **`ticketStatus`** is **`closed`**, **`status`** is set to **`closed`** as well (conversation thread closed, consistent with the partial unique index on one open row per phone).
+
+**Headers**
+
+```http
+Authorization: Bearer <jwt>
+Content-Type: application/json
+```
+
+**Request**
+
+```json
+{
+  "ticketStatus": "resolved",
+  "priority": "high"
+}
+```
+
+- `ticketStatus` — required: `new` | `open` | `pending` | `resolved` | `closed`.
+- `priority` — optional: `low` | `medium` | `high`.
+
+**200 example**
+
+```json
+{
+  "success": true,
+  "data": {
+    "_id": "...",
+    "customerPhone": "...",
+    "ticketNumber": "JEA-20260512-0001",
+    "ticketStatus": "resolved",
+    "priority": "high",
+    "status": "open",
+    "mode": "bot",
+    "updatedAt": "..."
+  },
+  "requestId": "..."
+}
+```
+
+**Errors**
+
+| HTTP | code | When |
+|------|------|------|
+| 400 | `VALIDATION_ERROR` | Invalid `conversationId` or body |
+| 401 | `UNAUTHORIZED` / `INVALID_TOKEN` | Missing or invalid JWT |
+| 403 | `FORBIDDEN` | Authenticated user lacks admin, supervisor, or agent role |
+| 404 | `CONVERSATION_NOT_FOUND` | Conversation id not found |
+| 409 | `OPEN_CONVERSATION_CONFLICT` | Rare: underlying update hit a unique-index conflict (e.g. edge cases around `status` / phone uniqueness) |
 
 ---
 
