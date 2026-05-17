@@ -212,6 +212,7 @@ async function saveBotReply({
   provider = "mock",
   metadata = {},
   providerMessageId: providerMessageIdOpt,
+  messageType = "text",
 }) {
   const correlationInboundMessageId = metadata.inboundMessageId || null;
 
@@ -224,7 +225,7 @@ async function saveBotReply({
     text,
     provider,
     providerMessageId: finalMessageId,
-    messageType: "text",
+    messageType,
     metadata,
     correlationInboundMessageId,
   });

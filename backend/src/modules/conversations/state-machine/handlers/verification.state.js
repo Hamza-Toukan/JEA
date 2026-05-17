@@ -2,6 +2,10 @@ const { CONVERSATION_STATES } = require("../states.constants");
 const {
   verifyMemberByEngineeringId,
 } = require("../../../members/services/mock-member.service");
+const {
+  InteractiveResponse,
+} = require("../../../channels/whatsapp/contracts/interactive-response.contract");
+const { MAIN_MENU_OPTIONS } = require("./main-menu.state");
 
 /**
  * @param {import('../state-router').StateHandlerContext} context
@@ -40,15 +44,13 @@ function handleVerificationState(context) {
 
   const { member } = result;
 
-  return {
-    replyText:
+  return new InteractiveResponse({
+    messageType: "interactive",
+    body:
       `مرحبًا ${member.memberName} (${member.memberSpecialty}).\n\n` +
       "تم التحقق من عضويتك بنجاح.\n\n" +
-      "اختر من القائمة:\n" +
-      "1 — التأمين الصحي\n" +
-      "2 — العضوية والاشتراكات\n" +
-      "3 — التحدث مع موظف\n" +
-      "4 — خدمات أخرى",
+      "اختر الخدمة المطلوبة",
+    options: MAIN_MENU_OPTIONS,
     nextState: CONVERSATION_STATES.MAIN_MENU,
     conversationUpdates: {
       engineeringId: member.engineeringId,
@@ -58,7 +60,7 @@ function handleVerificationState(context) {
       membershipStatus: member.membershipStatus,
       verifiedAt: new Date(),
     },
-  };
+  });
 }
 
 module.exports = {

@@ -13,6 +13,7 @@ const { handleHandoffState } = require("./handlers/handoff.state");
 const {
   applyConversationStateResult,
 } = require("../conversation.service");
+const { normalizeStateHandlerResult } = require("./handler-result.util");
 
 /**
  * @typedef {Object} StateHandlerContext
@@ -27,6 +28,16 @@ const {
  * @property {string} [nextState]
  * @property {Record<string, unknown>} [conversationUpdates]
  * @property {boolean} [setModeHuman]
+ */
+
+/**
+ * @typedef {Object} NormalizedStateHandlerResult
+ * @property {import('../../channels/whatsapp/contracts/interactive-response.contract').InteractiveResponse | null} interactiveResponse
+ * @property {string} replyText
+ * @property {string} [nextState]
+ * @property {Record<string, unknown>} conversationUpdates
+ * @property {boolean} setModeHuman
+ * @property {Record<string, unknown>} metadata
  */
 
 const handlersByState = {
@@ -45,7 +56,7 @@ const handlersByState = {
  * Routes inbound text to the handler for the current conversationState.
  *
  * @param {StateHandlerContext} context
- * @returns {Promise<{ replyText: string, conversation: object }>}
+ * @returns {Promise<{ replyText: string, conversation: object, interactiveResponse: import('../../channels/whatsapp/contracts/interactive-response.contract').InteractiveResponse | null, handlerMetadata: Record<string, unknown> }>}
  */
 function resolveConversationState(conversation) {
   if (conversation.conversationState) {
@@ -74,7 +85,8 @@ async function routeConversationState(context) {
     throw error;
   }
 
-  const result = handler(context);
+  const rawResult = handler(context);
+  const result = normalizeStateHandlerResult(rawResult);
 
   const fromState = currentState;
   const toState = result.nextState || fromState;
@@ -88,11 +100,13 @@ async function routeConversationState(context) {
     fromState,
     toState,
     conversationUpdates: result.conversationUpdates || {},
-    setModeHuman: Boolean(result.setModeHuman),
+    setModeHuman: result.setModeHuman,
   });
 
   return {
     replyText: result.replyText || "",
+    interactiveResponse: result.interactiveResponse,
+    handlerMetadata: result.metadata,
     conversation: updatedConversation || context.conversation,
   };
 }

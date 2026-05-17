@@ -1,38 +1,97 @@
 const { CONVERSATION_STATES } = require("../states.constants");
+const {
+  InteractiveResponse,
+} = require("../../../channels/whatsapp/contracts/interactive-response.contract");
 
-function buildMainMenuText(memberName) {
+const MAIN_MENU_OPTIONS = [
+  { id: "membership", title: "خدمات العضوية" },
+  { id: "insurance", title: "التأمين الصحي" },
+  { id: "support", title: "الدعم الفني" },
+  { id: "tickets", title: "التذاكر" },
+];
+
+function buildMainMenuInteractiveResponse(memberName) {
   const greeting = memberName ? `مرحبًا ${memberName}.\n\n` : "";
-  return (
-    `${greeting}القائمة الرئيسية:\n` +
-    "1 — التأمين الصحي\n" +
-    "2 — العضوية والاشتراكات\n" +
-    "3 — التحدث مع موظف\n" +
-    "4 — خدمات أخرى\n\n" +
-    "أرسل رقم الخيار أو اكتب موضوع استفسارك."
-  );
+
+  return new InteractiveResponse({
+    messageType: "interactive",
+    body: `${greeting}اختر الخدمة المطلوبة`,
+    options: MAIN_MENU_OPTIONS,
+    nextState: CONVERSATION_STATES.MAIN_MENU,
+  });
+}
+
+/**
+ * Resolves menu selection from interactive id, legacy numeric keys, or keywords.
+ * @param {string} text
+ * @returns {string | null}
+ */
+function resolveMainMenuSelection(text) {
+  const normalized = (text || "").trim().toLowerCase();
+
+  if (!normalized) {
+    return null;
+  }
+
+  const directIds = ["membership", "insurance", "support", "tickets"];
+
+  if (directIds.includes(normalized)) {
+    return normalized;
+  }
+
+  const numericMap = {
+    "1": "insurance",
+    "2": "membership",
+    "3": "support",
+    "4": "tickets",
+  };
+
+  if (numericMap[normalized]) {
+    return numericMap[normalized];
+  }
+
+  if (normalized.includes("تأمين")) {
+    return "insurance";
+  }
+
+  if (normalized.includes("عضوية") || normalized.includes("اشتراك")) {
+    return "membership";
+  }
+
+  if (
+    normalized.includes("موظف") ||
+    normalized.includes("حدا") ||
+    normalized.includes("بشر") ||
+    normalized.includes("دعم")
+  ) {
+    return "support";
+  }
+
+  if (normalized.includes("تذكرة") || normalized.includes("ticket")) {
+    return "tickets";
+  }
+
+  if (normalized === "0" || normalized.includes("قائمة") || normalized.includes("رئيس")) {
+    return "menu";
+  }
+
+  return null;
 }
 
 /**
  * @param {import('../state-router').StateHandlerContext} context
- * @returns {import('../state-router').StateHandlerResult}
+ * @returns {import('../state-router').StateHandlerResult | InteractiveResponse}
  */
 function handleMainMenuState(context) {
   const text = (context.text || "").trim();
   const memberName = context.conversation.memberName || "";
+  const selection = resolveMainMenuSelection(text);
 
-  if (!text) {
-    return {
-      replyText: buildMainMenuText(memberName),
-      nextState: CONVERSATION_STATES.MAIN_MENU,
-    };
+  if (!text || selection === "menu") {
+    return buildMainMenuInteractiveResponse(memberName);
   }
 
-  if (
-    text === "3" ||
-    text.includes("موظف") ||
-    text.includes("حدا") ||
-    text.includes("بشر")
-  ) {
+  if (selection === "support") {
     return {
       replyText:
         "تم تحويل طلبك لفريق الدعم. سيقوم موظف بالرد عليك في أقرب وقت.",
@@ -44,7 +103,7 @@ function handleMainMenuState(context) {
     };
   }
 
-  if (text === "1" || text.includes("تأمين")) {
+  if (selection === "insurance") {
     return {
       replyText:
         "بخصوص التأمين الصحي، سيتم لاحقًا ربط المساعد بقاعدة المعرفة الرسمية. " +
@@ -56,7 +115,7 @@ function handleMainMenuState(context) {
     };
   }
 
-  if (text === "2" || text.includes("عضوية") || text.includes("اشتراك")) {
+  if (selection === "membership") {
     return {
       replyText:
         "بخصوص العضوية والاشتراكات، سيتم تفعيل الخدمات الذكية قريبًا. " +
@@ -68,20 +127,13 @@ function handleMainMenuState(context) {
     };
   }
 
-  if (text === "0" || text.includes("قائمة") || text.includes("رئيس")) {
-    return {
-      replyText: buildMainMenuText(memberName),
-      nextState: CONVERSATION_STATES.MAIN_MENU,
-    };
-  }
-
-  if (text === "4") {
+  if (selection === "tickets") {
     return {
       replyText:
         "صف طلبك أو الخدمة المطلوبة وسنسجّلها. أرسل 0 للعودة للقائمة الرئيسية.",
       nextState: CONVERSATION_STATES.COLLECTING_SERVICE_DATA,
       conversationUpdates: {
-        metadata: { serviceTopic: "other" },
+        metadata: { serviceTopic: "tickets" },
       },
     };
   }
@@ -89,24 +141,22 @@ function handleMainMenuState(context) {
   return {
     replyText:
       "شكرًا لتواصلك. تم تسجيل رسالتك وسيتم تطوير الردود الذكية في المرحلة القادمة.\n\n" +
-      buildMainMenuText(memberName),
+      "أرسل 0 لعرض القائمة الرئيسية.",
     nextState: CONVERSATION_STATES.MAIN_MENU,
   };
 }
 
 /**
  * @param {import('../state-router').StateHandlerContext} context
- * @returns {import('../state-router').StateHandlerResult}
+ * @returns {import('../state-router').StateHandlerResult | InteractiveResponse}
  */
 function handleCollectingServiceDataState(context) {
   const text = (context.text || "").trim();
   const memberName = context.conversation.memberName || "";
+  const selection = resolveMainMenuSelection(text);
 
-  if (text === "0" || text.includes("قائمة") || text.includes("رئيس")) {
-    return {
-      replyText: buildMainMenuText(memberName),
-      nextState: CONVERSATION_STATES.MAIN_MENU,
-    };
+  if (selection === "menu") {
+    return buildMainMenuInteractiveResponse(memberName);
   }
 
   if (text.includes("مرفق") || text.includes("ملف") || text.includes("صورة")) {
@@ -127,17 +177,15 @@ function handleCollectingServiceDataState(context) {
 
 /**
  * @param {import('../state-router').StateHandlerContext} context
- * @returns {import('../state-router').StateHandlerResult}
+ * @returns {import('../state-router').StateHandlerResult | InteractiveResponse}
  */
 function handleAwaitingAttachmentState(context) {
   const text = (context.text || "").trim();
   const memberName = context.conversation.memberName || "";
+  const selection = resolveMainMenuSelection(text);
 
-  if (text === "0") {
-    return {
-      replyText: buildMainMenuText(memberName),
-      nextState: CONVERSATION_STATES.MAIN_MENU,
-    };
+  if (selection === "menu") {
+    return buildMainMenuInteractiveResponse(memberName);
   }
 
   return {
@@ -149,7 +197,7 @@ function handleAwaitingAttachmentState(context) {
 
 /**
  * @param {import('../state-router').StateHandlerContext} context
- * @returns {import('../state-router').StateHandlerResult}
+ * @returns {import('../state-router').StateHandlerResult | InteractiveResponse}
  */
 function handleResolvedState(context) {
   const memberName = context.conversation.memberName || "";
@@ -157,7 +205,7 @@ function handleResolvedState(context) {
   return {
     replyText:
       `تم إغلاق طلبك السابق. ${memberName ? `مرحبًا ${memberName}. ` : ""}` +
-      buildMainMenuText(memberName),
+      "أرسل أي رسالة لعرض القائمة الرئيسية.",
     nextState: CONVERSATION_STATES.MAIN_MENU,
     conversationUpdates: {
       ticketStatus: "open",
@@ -170,5 +218,7 @@ module.exports = {
   handleCollectingServiceDataState,
   handleAwaitingAttachmentState,
   handleResolvedState,
-  buildMainMenuText,
+  buildMainMenuInteractiveResponse,
+  resolveMainMenuSelection,
+  MAIN_MENU_OPTIONS,
 };

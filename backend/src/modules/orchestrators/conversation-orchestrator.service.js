@@ -6,6 +6,9 @@ const {
 const { routeConversationState } = require("../conversations/state-machine/state-router");
 const { sendMessage } = require("../channels/messaging.service");
 const {
+  buildInteractiveMessage,
+} = require("../channels/whatsapp/builders/interactive-message.builder");
+const {
   getActiveWhatsAppProviderId,
 } = require("../channels/providers/provider-factory");
 const { logger } = require("../../core/logger/logger");
@@ -74,12 +77,15 @@ async function processIncomingMessage(params) {
     };
   }
 
-  const { replyText, conversation: conversationAfterState } =
-    await routeConversationState({
-      conversation,
-      text: inbound.text,
-      inboundMessage,
-    });
+  const {
+    replyText,
+    interactiveResponse,
+    conversation: conversationAfterState,
+  } = await routeConversationState({
+    conversation,
+    text: inbound.text,
+    inboundMessage,
+  });
 
   const trimmedReply = String(replyText || "").trim();
 
@@ -89,7 +95,28 @@ async function processIncomingMessage(params) {
       inboundMessage,
       outboundMessage: null,
       replyText: "",
+      renderedMessage: null,
     };
+  }
+
+  let renderedMessage = null;
+
+  if (interactiveResponse && interactiveResponse.isInteractive()) {
+    renderedMessage = buildInteractiveMessage({
+      body: interactiveResponse.body,
+      options: interactiveResponse.options,
+      listSectionTitle: "الخدمات المتاحة",
+    });
+
+    logger.info(
+      {
+        conversationId: String(conversationAfterState._id),
+        conversationState: conversationAfterState.conversationState,
+        renderedType: renderedMessage.type,
+        optionCount: interactiveResponse.options.length,
+      },
+      "Interactive message rendered (provider formatting deferred)"
+    );
   }
 
   const activeProvider = getActiveWhatsAppProviderId();
@@ -98,10 +125,13 @@ async function processIncomingMessage(params) {
     conversationId: conversationAfterState._id,
     text: trimmedReply,
     provider: activeProvider,
+    messageType: renderedMessage ? "interactive" : "text",
     metadata: {
       generatedBy: "state-machine-orchestrator",
       inboundMessageId: inboundMessage._id,
       conversationState: conversationAfterState.conversationState,
+      ...(renderedMessage ? { renderedMessage } : {}),
+      ...(interactiveResponse?.metadata || {}),
     },
   });
 
@@ -127,6 +157,7 @@ async function processIncomingMessage(params) {
     inboundMessage,
     outboundMessage,
     replyText: trimmedReply,
+    renderedMessage,
   };
 }
 
