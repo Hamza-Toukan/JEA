@@ -9,6 +9,9 @@ const {
   buildInteractiveMessage,
 } = require("../channels/whatsapp/builders/interactive-message.builder");
 const {
+  formatTwilioPayload,
+} = require("../channels/whatsapp/formatters/twilio-payload.formatter");
+const {
   getActiveWhatsAppProviderId,
 } = require("../channels/providers/provider-factory");
 const { logger } = require("../../core/logger/logger");
@@ -96,10 +99,12 @@ async function processIncomingMessage(params) {
       outboundMessage: null,
       replyText: "",
       renderedMessage: null,
+      transportPayload: null,
     };
   }
 
   let renderedMessage = null;
+  let transportPayload = null;
 
   if (interactiveResponse && interactiveResponse.isInteractive()) {
     renderedMessage = buildInteractiveMessage({
@@ -115,9 +120,21 @@ async function processIncomingMessage(params) {
         renderedType: renderedMessage.type,
         optionCount: interactiveResponse.options.length,
       },
-      "Interactive message rendered (provider formatting deferred)"
+      "Interactive message rendered"
     );
   }
+
+  transportPayload = formatTwilioPayload(
+    renderedMessage || { type: "text", body: trimmedReply }
+  );
+
+  logger.info(
+    {
+      conversationId: String(conversationAfterState._id),
+      transportPayloadType: transportPayload.type,
+    },
+    "Twilio transport payload formatted"
+  );
 
   const activeProvider = getActiveWhatsAppProviderId();
 
@@ -131,6 +148,7 @@ async function processIncomingMessage(params) {
       inboundMessageId: inboundMessage._id,
       conversationState: conversationAfterState.conversationState,
       ...(renderedMessage ? { renderedMessage } : {}),
+      transportPayload,
       ...(interactiveResponse?.metadata || {}),
     },
   });
@@ -139,7 +157,7 @@ async function processIncomingMessage(params) {
     await sendMessage({
       channel: "whatsapp",
       to: inbound.from,
-      body: trimmedReply,
+      payload: transportPayload,
     });
   } catch (error) {
     logger.error(
@@ -158,6 +176,7 @@ async function processIncomingMessage(params) {
     outboundMessage,
     replyText: trimmedReply,
     renderedMessage,
+    transportPayload,
   };
 }
 

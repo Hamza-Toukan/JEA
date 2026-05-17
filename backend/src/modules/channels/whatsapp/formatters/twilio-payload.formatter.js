@@ -1,11 +1,11 @@
 /**
- * Future integration point: maps normalized interactive payloads to Twilio Content API /
- * WhatsApp message resource fields.
+ * Maps provider-agnostic rendered structures (interactive builders)
+ * to Twilio-oriented transport payloads for the provider layer.
  *
- * Not used in the infrastructure phase — outbound still sends plain text via messaging.service.
+ * Does NOT call the Twilio SDK or Content API — transport shaping only.
  *
  * @param {Object} renderedPayload - Output from buildInteractiveMessage()
- * @returns {Object} Twilio-specific create-message parameters (stub)
+ * @returns {import('../../transport/transport-payload.contract').TransportPayload}
  */
 function formatTwilioPayload(renderedPayload) {
   if (!renderedPayload || typeof renderedPayload !== "object") {
@@ -15,35 +15,28 @@ function formatTwilioPayload(renderedPayload) {
   switch (renderedPayload.type) {
     case "text":
       return {
-        channel: "whatsapp",
-        messageType: "text",
+        type: "text",
         body: renderedPayload.body,
       };
 
     case "quick_reply":
       return {
-        channel: "whatsapp",
-        messageType: "interactive",
-        interactiveType: "quick_reply",
+        type: "twilio_quick_reply",
         body: renderedPayload.body,
         buttons: renderedPayload.buttons,
-        _note: "Map to Twilio Content / Messaging API when formatter is enabled",
       };
 
     case "list":
       return {
-        channel: "whatsapp",
-        messageType: "interactive",
-        interactiveType: "list",
+        type: "twilio_list",
         body: renderedPayload.body,
         buttonText: renderedPayload.buttonText,
         sections: renderedPayload.sections,
-        _note: "Map to Twilio Content / Messaging API when formatter is enabled",
       };
 
     default:
       throw new Error(
-        `Unsupported rendered payload type for Twilio: ${renderedPayload.type}`
+        `Unsupported rendered payload type for Twilio formatter: ${renderedPayload.type}`
       );
   }
 }
