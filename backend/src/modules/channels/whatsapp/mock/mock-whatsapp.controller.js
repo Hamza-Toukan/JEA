@@ -1,7 +1,7 @@
 const { z } = require("zod");
 const {
   processIncomingMessage,
-} = require("../../../orchestration/conversation-orchestrator.service");
+} = require("../../../orchestrators/conversation-orchestrator.service");
 const { logger } = require("../../../../core/logger/logger");
 
 const mockIncomingSchema = z.object({

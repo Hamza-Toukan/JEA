@@ -1,6 +1,6 @@
 const {
   processIncomingMessage,
-} = require("../../../orchestration/conversation-orchestrator.service");
+} = require("../../../orchestrators/conversation-orchestrator.service");
 const { logger } = require("../../../../core/logger/logger");
 
 function stripWhatsAppPrefix(from) {

@@ -29,6 +29,7 @@ async function findOrCreateOpenConversationByPhone(customerPhone) {
       customerPhone,
       status: "open",
       mode: "bot",
+      conversationState: "new",
       lastMessageAt: new Date(),
     });
   } catch (error) {
@@ -165,6 +166,44 @@ async function handleIncomingCustomerMessage({
     inboundMessage,
     inboundWasDuplicate,
   };
+}
+
+/**
+ * Applies state-machine handler output to the conversation document.
+ */
+async function applyConversationStateResult({
+  conversationId,
+  fromState,
+  toState,
+  conversationUpdates = {},
+  setModeHuman = false,
+}) {
+  const update = {
+    conversationState: toState,
+  };
+
+  if (setModeHuman) {
+    update.mode = "human";
+  }
+
+  const { metadata: metadataPatch, ...directFields } = conversationUpdates;
+
+  Object.assign(update, directFields);
+
+  if (metadataPatch && typeof metadataPatch === "object") {
+    const current = await Conversation.findById(conversationId)
+      .select("metadata")
+      .lean();
+
+    update.metadata = {
+      ...(current?.metadata || {}),
+      ...metadataPatch,
+    };
+  }
+
+  return Conversation.findByIdAndUpdate(conversationId, update, {
+    new: true,
+  });
 }
 
 async function saveBotReply({
@@ -552,4 +591,5 @@ module.exports = {
   updateConversationStatus,
   addInternalNoteToConversation,
   updateTicketStatus,
+  applyConversationStateResult,
 };

@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const { ALL_CONVERSATION_STATES } = require("./state-machine/states.constants");
 
 const internalNoteSchema = new mongoose.Schema(
   {
@@ -32,6 +33,39 @@ const conversationSchema = new mongoose.Schema(
       type: String,
       default: null,
       index: true
+    },
+
+    engineeringId: {
+      type: String,
+      default: null,
+      index: true,
+    },
+
+    memberName: {
+      type: String,
+      default: null,
+    },
+
+    memberSpecialty: {
+      type: String,
+      default: null,
+    },
+
+    membershipStatus: {
+      type: String,
+      default: null,
+    },
+
+    verifiedAt: {
+      type: Date,
+      default: null,
+    },
+
+    conversationState: {
+      type: String,
+      enum: ALL_CONVERSATION_STATES,
+      default: "new",
+      index: true,
     },
 
     status: {
