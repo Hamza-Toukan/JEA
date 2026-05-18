@@ -79,6 +79,52 @@ async function sendTwilioContentInteractiveMessage(to, mappedRequest) {
   };
 }
 
+/**
+ * Sends a pre-approved WhatsApp template via ContentSid (no Content create step).
+ *
+ * @param {string} to
+ * @param {{ messageCreate: { contentSid: string, contentVariables: Record<string, string> } }} mappedRequest
+ * @returns {Promise<{ sid: string, contentSid: string }>}
+ */
+async function sendTwilioApprovedTemplateMessage(to, mappedRequest) {
+  if (!env.TWILIO_WHATSAPP_NUMBER || !String(env.TWILIO_WHATSAPP_NUMBER).trim()) {
+    throw new Error("TWILIO_WHATSAPP_NUMBER is not configured");
+  }
+
+  const formattedTo = formatWhatsAppAddress(to);
+  const formattedFrom = formatWhatsAppAddress(env.TWILIO_WHATSAPP_NUMBER);
+
+  if (!formattedTo) {
+    throw new Error("Invalid destination for Twilio WhatsApp send");
+  }
+
+  const { contentSid, contentVariables } = mappedRequest.messageCreate;
+
+  if (!contentSid) {
+    throw new Error("Approved template send requires contentSid");
+  }
+
+  const client = getTwilioClient();
+
+  const messageParams = {
+    from: formattedFrom,
+    to: formattedTo,
+    contentSid,
+    contentVariables: JSON.stringify(contentVariables || {}),
+  };
+
+  if (env.TWILIO_MESSAGING_SERVICE_SID) {
+    messageParams.messagingServiceSid = env.TWILIO_MESSAGING_SERVICE_SID;
+  }
+
+  const message = await client.messages.create(messageParams);
+
+  return {
+    sid: message.sid,
+    contentSid,
+  };
+}
+
 async function sendTwilioMessage(to, text) {
   if (!env.TWILIO_WHATSAPP_NUMBER || !String(env.TWILIO_WHATSAPP_NUMBER).trim()) {
     throw new Error("TWILIO_WHATSAPP_NUMBER is not configured");
@@ -103,6 +149,7 @@ async function sendTwilioMessage(to, text) {
 module.exports = {
   sendTwilioMessage,
   sendTwilioContentInteractiveMessage,
+  sendTwilioApprovedTemplateMessage,
   formatWhatsAppAddress,
   getTwilioClient,
 };

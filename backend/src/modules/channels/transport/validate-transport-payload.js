@@ -9,11 +9,25 @@ function validateTransportPayload(payload) {
     throw new Error("Transport payload must be an object");
   }
 
-  const { type, body } = payload;
+  const { type } = payload;
 
   if (!TRANSPORT_PAYLOAD_TYPES.includes(type)) {
     throw new Error(`Unsupported transport payload type: ${type}`);
   }
+
+  if (type === "approved_template") {
+    if (!payload.templateKey || typeof payload.templateKey !== "string") {
+      throw new Error("approved_template payload requires templateKey");
+    }
+
+    if (!payload.variables || typeof payload.variables !== "object") {
+      throw new Error("approved_template payload requires variables object");
+    }
+
+    return payload;
+  }
+
+  const { body } = payload;
 
   if (typeof body !== "string" || !body.trim()) {
     throw new Error("Transport payload requires a non-empty body");

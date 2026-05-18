@@ -3,6 +3,7 @@ const {
   saveBotReply,
   findExistingBotReplyForInbound,
   updateOutboundMessageProviderId,
+  patchOutboundMessageMetadata,
 } = require("../conversations/conversation.service");
 const { routeConversationState } = require("../conversations/state-machine/state-router");
 const { sendMessage } = require("../channels/messaging.service");
@@ -12,6 +13,12 @@ const {
 const {
   formatTwilioPayload,
 } = require("../channels/whatsapp/formatters/twilio-payload.formatter");
+const {
+  tryBuildStructuralTemplateTransport,
+} = require("../channels/whatsapp/templates/structural-template-delivery.service");
+const {
+  inferStructureFromRenderedMessage,
+} = require("../channels/whatsapp/templates/interactive-template-resolver.service");
 const {
   getActiveWhatsAppProviderId,
 } = require("../channels/providers/provider-factory");
@@ -106,6 +113,7 @@ async function processIncomingMessage(params) {
 
   let renderedMessage = null;
   let transportPayload = null;
+  let structuralDelivery = null;
 
   if (interactiveResponse && interactiveResponse.isInteractive()) {
     renderedMessage = buildInteractiveMessage({
@@ -123,33 +131,87 @@ async function processIncomingMessage(params) {
       },
       "Interactive message rendered"
     );
+
+    structuralDelivery = tryBuildStructuralTemplateTransport(renderedMessage);
   }
 
-  transportPayload = formatTwilioPayload(
-    renderedMessage || { type: "text", body: trimmedReply }
-  );
+  if (structuralDelivery) {
+    transportPayload = structuralDelivery.payload;
 
-  logger.info(
-    {
-      conversationId: String(conversationAfterState._id),
-      transportPayloadType: transportPayload.type,
-    },
-    "Twilio transport payload formatted"
-  );
+    logger.info(
+      {
+        conversationId: String(conversationAfterState._id),
+        transportPayloadType: transportPayload.type,
+        structureType: structuralDelivery.structureType,
+        optionCount: structuralDelivery.optionCount,
+        resolvedTemplateKey: structuralDelivery.templateKey,
+        usingApprovedTemplate: true,
+        fallbackReason: null,
+      },
+      "Using structural approved template transport"
+    );
+  } else {
+    transportPayload = formatTwilioPayload(
+      renderedMessage || { type: "text", body: trimmedReply }
+    );
+
+    const runtimeStructure = renderedMessage
+      ? inferStructureFromRenderedMessage(renderedMessage)
+      : null;
+
+    logger.info(
+      {
+        conversationId: String(conversationAfterState._id),
+        transportPayloadType: transportPayload.type,
+        structureType: runtimeStructure?.type ?? null,
+        optionCount: runtimeStructure?.optionCount ?? null,
+        resolvedTemplateKey: null,
+        usingApprovedTemplate: false,
+        fallbackReason: renderedMessage
+          ? "STRUCTURAL_TEMPLATE_UNAVAILABLE"
+          : null,
+      },
+      "Using runtime transport payload (text or dynamic interactive)"
+    );
+  }
 
   const activeProvider = getActiveWhatsAppProviderId();
 
+  const isApprovedTemplate = transportPayload.type === "approved_template";
+  const persistText = isApprovedTemplate
+    ? `[template:${transportPayload.templateKey}]`
+    : trimmedReply;
+
   const outboundMessage = await saveBotReply({
     conversationId: conversationAfterState._id,
-    text: trimmedReply,
+    text: persistText,
     provider: activeProvider,
-    messageType: renderedMessage ? "interactive" : "text",
+    messageType: isApprovedTemplate
+      ? "system"
+      : renderedMessage
+        ? "interactive"
+        : "text",
     metadata: {
       generatedBy: "state-machine-orchestrator",
       inboundMessageId: inboundMessage._id,
       conversationState: conversationAfterState.conversationState,
       ...(renderedMessage ? { renderedMessage } : {}),
       transportPayload,
+      ...(structuralDelivery
+        ? {
+            templateKind: "structural",
+            structureType: structuralDelivery.structureType,
+            optionCount: structuralDelivery.optionCount,
+            resolvedTemplateKey: structuralDelivery.templateKey,
+            templateVariables: structuralDelivery.variables,
+          }
+        : {}),
+      ...(isApprovedTemplate
+        ? {
+            templateKey: transportPayload.templateKey,
+            templateVariables: transportPayload.variables,
+          }
+        : {}),
       ...(interactiveResponse?.metadata || {}),
     },
   });
@@ -171,12 +233,22 @@ async function processIncomingMessage(params) {
         sendResult.providerMessageId
       );
 
+      if (sendResult.templateDelivery) {
+        await patchOutboundMessageMetadata(outboundMessage._id, {
+          templateKey: sendResult.templateDelivery.templateKey,
+          contentSid: sendResult.templateDelivery.contentSid,
+          templateVariables: sendResult.templateDelivery.templateVariables,
+          templateCategory: sendResult.templateDelivery.templateCategory,
+        });
+      }
+
       logger.info(
         {
           conversationId: String(conversationAfterState._id),
           providerMessageId: sendResult.providerMessageId,
           transportPayloadType: transportPayload.type,
           contentType: sendResult.contentType || transportPayload.type,
+          templateKey: sendResult.templateDelivery?.templateKey,
         },
         "Outbound message provider id persisted"
       );

@@ -23,13 +23,18 @@
  */
 
 /**
- * @typedef {TextTransportPayload | TwilioQuickReplyTransportPayload | TwilioListTransportPayload} TransportPayload
+ * @typedef {import('./template-payload.contract').ApprovedTemplateTransportPayload} ApprovedTemplateTransportPayload
+ */
+
+/**
+ * @typedef {TextTransportPayload | TwilioQuickReplyTransportPayload | TwilioListTransportPayload | ApprovedTemplateTransportPayload} TransportPayload
  */
 
 const TRANSPORT_PAYLOAD_TYPES = [
   "text",
   "twilio_quick_reply",
   "twilio_list",
+  "approved_template",
 ];
 
 module.exports = {

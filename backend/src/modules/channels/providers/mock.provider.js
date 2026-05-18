@@ -8,6 +8,7 @@ const {
 } = require("../whatsapp/translators/twilio-list.translator");
 const {
   mapTwilioInteractivePayload,
+  mapTwilioApprovedTemplate,
 } = require("../whatsapp/mappers/twilio-content-api.mapper");
 
 /**
@@ -47,6 +48,39 @@ async function dispatchTransportPayload(payload, to) {
         },
         "Mock WhatsApp quick reply mapped (not sent to external API)"
       );
+      break;
+    }
+
+    case "approved_template": {
+      try {
+        const mapped = mapTwilioApprovedTemplate(payload);
+        logger.info(
+          {
+            provider: "mock",
+            transportPayloadType: payload.type,
+            contentType: mapped.contentType,
+            templateKey: payload.templateKey,
+            templateCategory: mapped.templateCategory,
+            contentSid: mapped.twilioRequest.messageCreate.contentSid,
+            variableKeys: Object.keys(payload.variables || {}),
+            to,
+            providerMessageId,
+            twilioRequest: mapped.twilioRequest,
+          },
+          "Mock approved template mapped (not sent to external API)"
+        );
+      } catch (error) {
+        logger.warn(
+          {
+            provider: "mock",
+            transportPayloadType: payload.type,
+            templateKey: payload.templateKey,
+            errorMessage: error.message,
+            code: error.code,
+          },
+          "Mock approved template mapping skipped"
+        );
+      }
       break;
     }
 

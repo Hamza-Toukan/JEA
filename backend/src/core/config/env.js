@@ -32,6 +32,21 @@ const envSchema = z.object({
   TWILIO_WHATSAPP_NUMBER: z.string().optional(),
   TWILIO_MESSAGING_SERVICE_SID: z.string().optional(),
   TWILIO_CONTENT_LANGUAGE: z.string().default("ar"),
+
+  TWILIO_TEMPLATE_VERIFICATION_SUCCESS_SID: z.string().optional(),
+  TWILIO_TEMPLATE_TICKET_CREATED_SID: z.string().optional(),
+
+  TWILIO_TEMPLATE_QUICK_REPLY_2_SID: z.string().optional(),
+  TWILIO_TEMPLATE_QUICK_REPLY_3_SID: z.string().optional(),
+  TWILIO_TEMPLATE_LIST_4_SID: z.string().optional(),
+  TWILIO_TEMPLATE_LIST_5_SID: z.string().optional(),
+  TWILIO_TEMPLATE_LIST_6_SID: z.string().optional(),
+  TWILIO_TEMPLATE_LIST_7_SID: z.string().optional(),
+  TWILIO_TEMPLATE_LIST_8_SID: z.string().optional(),
+  TWILIO_TEMPLATE_LIST_9_SID: z.string().optional(),
+  TWILIO_TEMPLATE_LIST_10_SID: z.string().optional(),
+  TWILIO_TEMPLATE_AUTH_OTP_SID: z.string().optional(),
+  TWILIO_TEMPLATE_GENERIC_NOTIFICATION_SID: z.string().optional(),
 });
 
 const parsed = envSchema.safeParse(process.env);

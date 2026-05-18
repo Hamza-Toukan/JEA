@@ -3,6 +3,8 @@
  * This is the ONLY module that may encode Twilio SDK request schemas.
  */
 
+const { resolveTemplate } = require("../templates/template-registry.service");
+
 const CONTENT_TYPE_QUICK_REPLY = "twilio/quick-reply";
 const CONTENT_TYPE_LIST_PICKER = "twilio/list-picker";
 
@@ -93,6 +95,36 @@ function mapTwilioInteractiveList(translatedPayload) {
 }
 
 /**
+ * @param {import('../../transport/template-payload.contract').ApprovedTemplateTransportPayload} transportPayload
+ */
+function mapTwilioApprovedTemplate(transportPayload) {
+  if (transportPayload.type !== "approved_template") {
+    throw new Error(
+      `mapTwilioApprovedTemplate expected approved_template, got ${transportPayload.type}`
+    );
+  }
+
+  const resolved = resolveTemplate(
+    transportPayload.templateKey,
+    transportPayload.variables,
+    { locale: transportPayload.locale }
+  );
+
+  return {
+    contentType: "approved_template",
+    templateKey: transportPayload.templateKey,
+    templateCategory: resolved.template.category,
+    twilioRequest: {
+      messageCreate: {
+        contentSid: resolved.template.contentSid,
+        contentVariables: resolved.contentVariables,
+      },
+    },
+    resolvedTemplate: resolved,
+  };
+}
+
+/**
  * @param {import('../translators/twilio-interactive-payload.contract').TwilioInteractivePayload} translatedPayload
  */
 function mapTwilioInteractivePayload(translatedPayload) {
@@ -112,6 +144,7 @@ module.exports = {
   mapTwilioInteractiveButtons,
   mapTwilioInteractiveList,
   mapTwilioInteractivePayload,
+  mapTwilioApprovedTemplate,
   CONTENT_TYPE_QUICK_REPLY,
   CONTENT_TYPE_LIST_PICKER,
 };

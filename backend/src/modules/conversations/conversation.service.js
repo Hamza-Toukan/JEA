@@ -218,6 +218,29 @@ async function updateOutboundMessageProviderId(messageId, providerMessageId) {
   ).lean();
 }
 
+async function patchOutboundMessageMetadata(messageId, metadataPatch) {
+  if (!validateObjectId(messageId) || !metadataPatch) {
+    return null;
+  }
+
+  const existing = await Message.findById(messageId).select("metadata").lean();
+
+  if (!existing) {
+    return null;
+  }
+
+  return Message.findByIdAndUpdate(
+    messageId,
+    {
+      metadata: {
+        ...(existing.metadata || {}),
+        ...metadataPatch,
+      },
+    },
+    { new: true }
+  ).lean();
+}
+
 async function saveBotReply({
   conversationId,
   text,
@@ -597,6 +620,7 @@ module.exports = {
   handleIncomingCustomerMessage,
   saveBotReply,
   updateOutboundMessageProviderId,
+  patchOutboundMessageMetadata,
   listConversations,
   getConversationById,
   listMessagesByConversationId,

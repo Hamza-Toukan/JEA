@@ -1,5 +1,6 @@
 const {
   QUICK_REPLY_MAX_BUTTONS,
+  QUICK_REPLY_TITLE_MAX_LENGTH,
   validateOptionsList,
 } = require("./validation.util");
 
@@ -19,6 +20,7 @@ function buildQuickReplyMessage({ body, options = [] }) {
   const buttons = validateOptionsList(options, {
     maxCount: QUICK_REPLY_MAX_BUTTONS,
     label: "Quick reply",
+    titleMaxLength: QUICK_REPLY_TITLE_MAX_LENGTH,
   });
 
   if (buttons.length === 0) {

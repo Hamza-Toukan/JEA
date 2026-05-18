@@ -1,6 +1,7 @@
 const QUICK_REPLY_MAX_BUTTONS = 3;
 const LIST_MAX_ROWS = 10;
 const OPTION_TITLE_MAX_LENGTH = 24;
+const QUICK_REPLY_TITLE_MAX_LENGTH = 25;
 const OPTION_ID_MAX_LENGTH = 200;
 const OPTION_ID_PATTERN = /^[a-z0-9_-]+$/i;
 
@@ -10,7 +11,7 @@ function assertNonEmptyString(value, fieldName) {
   }
 }
 
-function validateOption(option, index) {
+function validateOption(option, index, titleMaxLength = OPTION_TITLE_MAX_LENGTH) {
   assertNonEmptyString(option.id, `options[${index}].id`);
   assertNonEmptyString(option.title, `options[${index}].title`);
 
@@ -29,9 +30,9 @@ function validateOption(option, index) {
     );
   }
 
-  if (title.length > OPTION_TITLE_MAX_LENGTH) {
+  if (title.length > titleMaxLength) {
     throw new Error(
-      `options[${index}].title exceeds max length of ${OPTION_TITLE_MAX_LENGTH}`
+      `options[${index}].title exceeds max length of ${titleMaxLength}`
     );
   }
 
@@ -64,7 +65,7 @@ function validateUniqueOptionIds(options) {
   }
 }
 
-function validateOptionsList(options, { maxCount, label }) {
+function validateOptionsList(options, { maxCount, label, titleMaxLength }) {
   if (!Array.isArray(options)) {
     throw new Error(`${label} options must be an array`);
   }
@@ -73,7 +74,9 @@ function validateOptionsList(options, { maxCount, label }) {
     throw new Error(`${label} supports at most ${maxCount} options`);
   }
 
-  const normalized = options.map((option, index) => validateOption(option, index));
+  const normalized = options.map((option, index) =>
+    validateOption(option, index, titleMaxLength ?? OPTION_TITLE_MAX_LENGTH)
+  );
   validateUniqueOptionIds(normalized);
   return normalized;
 }
@@ -82,6 +85,7 @@ module.exports = {
   QUICK_REPLY_MAX_BUTTONS,
   LIST_MAX_ROWS,
   OPTION_TITLE_MAX_LENGTH,
+  QUICK_REPLY_TITLE_MAX_LENGTH,
   validateOptionsList,
   validateOption,
   validateUniqueOptionIds,
