@@ -1,5 +1,14 @@
 const { generateMockMessageId } = require("../../../core/utils/generate-mock-message-id");
 const { logger } = require("../../../core/logger/logger");
+const {
+  translateTwilioQuickReply,
+} = require("../whatsapp/translators/twilio-quick-reply.translator");
+const {
+  translateTwilioList,
+} = require("../whatsapp/translators/twilio-list.translator");
+const {
+  mapTwilioInteractivePayload,
+} = require("../whatsapp/mappers/twilio-content-api.mapper");
 
 /**
  * @param {import('../transport/transport-payload.contract').TransportPayload} payload
@@ -22,31 +31,47 @@ async function dispatchTransportPayload(payload, to) {
       );
       break;
 
-    case "twilio_quick_reply":
+    case "twilio_quick_reply": {
+      const translated = translateTwilioQuickReply(payload);
+      const mapped = mapTwilioInteractivePayload(translated);
       logger.info(
         {
           provider: "mock",
           transportPayloadType: payload.type,
+          contentType: mapped.contentType,
+          translatedPayloadType: translated.type,
+          buttonCount: translated.buttons.length,
           to,
-          buttonCount: payload.buttons.length,
           providerMessageId,
+          twilioRequest: mapped.twilioRequest,
         },
-        "Mock WhatsApp quick reply transport payload (not sent to external API)"
+        "Mock WhatsApp quick reply mapped (not sent to external API)"
       );
       break;
+    }
 
-    case "twilio_list":
+    case "twilio_list": {
+      const translated = translateTwilioList(payload);
+      const mapped = mapTwilioInteractivePayload(translated);
+      const rowCount = translated.sections.reduce(
+        (sum, section) => sum + section.rows.length,
+        0
+      );
       logger.info(
         {
           provider: "mock",
           transportPayloadType: payload.type,
+          contentType: mapped.contentType,
+          translatedPayloadType: translated.type,
+          rowCount,
           to,
-          sectionCount: payload.sections.length,
           providerMessageId,
+          twilioRequest: mapped.twilioRequest,
         },
-        "Mock WhatsApp list transport payload (not sent to external API)"
+        "Mock WhatsApp list mapped (not sent to external API)"
       );
       break;
+    }
 
     default:
       throw new Error(`Unsupported mock transport payload type: ${payload.type}`);

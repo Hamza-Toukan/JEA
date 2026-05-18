@@ -2,6 +2,7 @@ const {
   handleIncomingCustomerMessage,
   saveBotReply,
   findExistingBotReplyForInbound,
+  updateOutboundMessageProviderId,
 } = require("../conversations/conversation.service");
 const { routeConversationState } = require("../conversations/state-machine/state-router");
 const { sendMessage } = require("../channels/messaging.service");
@@ -154,11 +155,32 @@ async function processIncomingMessage(params) {
   });
 
   try {
-    await sendMessage({
+    const sendResult = await sendMessage({
       channel: "whatsapp",
       to: inbound.from,
       payload: transportPayload,
     });
+
+    if (
+      sendResult?.providerMessageId &&
+      outboundMessage?._id &&
+      sendResult.delivered !== false
+    ) {
+      await updateOutboundMessageProviderId(
+        outboundMessage._id,
+        sendResult.providerMessageId
+      );
+
+      logger.info(
+        {
+          conversationId: String(conversationAfterState._id),
+          providerMessageId: sendResult.providerMessageId,
+          transportPayloadType: transportPayload.type,
+          contentType: sendResult.contentType || transportPayload.type,
+        },
+        "Outbound message provider id persisted"
+      );
+    }
   } catch (error) {
     logger.error(
       {

@@ -206,6 +206,18 @@ async function applyConversationStateResult({
   });
 }
 
+async function updateOutboundMessageProviderId(messageId, providerMessageId) {
+  if (!validateObjectId(messageId) || !providerMessageId) {
+    return null;
+  }
+
+  return Message.findByIdAndUpdate(
+    messageId,
+    { providerMessageId: String(providerMessageId) },
+    { new: true }
+  ).lean();
+}
+
 async function saveBotReply({
   conversationId,
   text,
@@ -584,6 +596,7 @@ module.exports = {
   findExistingBotReplyForInbound,
   handleIncomingCustomerMessage,
   saveBotReply,
+  updateOutboundMessageProviderId,
   listConversations,
   getConversationById,
   listMessagesByConversationId,

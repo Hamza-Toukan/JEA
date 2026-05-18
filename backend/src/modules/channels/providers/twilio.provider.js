@@ -1,5 +1,7 @@
-const { sendTwilioMessage } = require("../whatsapp/twilio/twilio.service");
-const { generateMockMessageId } = require("../../../core/utils/generate-mock-message-id");
+const {
+  sendTwilioMessage,
+  sendTwilioContentInteractiveMessage,
+} = require("../whatsapp/twilio/twilio.service");
 const { logger } = require("../../../core/logger/logger");
 const {
   translateTwilioQuickReply,
@@ -7,53 +9,52 @@ const {
 const {
   translateTwilioList,
 } = require("../whatsapp/translators/twilio-list.translator");
+const {
+  mapTwilioInteractivePayload,
+} = require("../whatsapp/mappers/twilio-content-api.mapper");
 
 /**
- * Future Content API integration point:
- * map translatedPayload → Twilio messages.create() / content API request body.
- *
  * @param {import('../whatsapp/translators/twilio-interactive-payload.contract').TwilioInteractivePayload} translatedPayload
  * @param {string} to
- * @returns {Promise<import('./whatsapp-provider.interface').SendWhatsAppMessageResult>}
  */
 async function sendTwilioInteractiveMessage(translatedPayload, to) {
-  if (translatedPayload.type === "twilio_interactive_buttons") {
-    logger.info(
-      {
-        provider: "twilio",
-        transportPayloadType: "twilio_quick_reply",
-        translatedPayloadType: translatedPayload.type,
-        to,
-        buttonCount: translatedPayload.buttons.length,
-        translatedPayload,
-      },
-      "Twilio interactive buttons payload translated (SDK send not wired yet)"
-    );
-  } else if (translatedPayload.type === "twilio_interactive_list") {
-    const rowCount = translatedPayload.sections.reduce(
-      (sum, section) => sum + section.rows.length,
-      0
-    );
+  const mapped = mapTwilioInteractivePayload(translatedPayload);
 
-    logger.info(
-      {
-        provider: "twilio",
-        transportPayloadType: "twilio_list",
-        translatedPayloadType: translatedPayload.type,
-        to,
-        sectionCount: translatedPayload.sections.length,
-        rowCount,
-        buttonText: translatedPayload.buttonText,
-        translatedPayload,
-      },
-      "Twilio interactive list payload translated (SDK send not wired yet)"
-    );
-  }
+  const buttonCount =
+    translatedPayload.type === "twilio_interactive_buttons"
+      ? translatedPayload.buttons.length
+      : undefined;
+
+  const rowCount =
+    translatedPayload.type === "twilio_interactive_list"
+      ? translatedPayload.sections.reduce(
+          (sum, section) => sum + section.rows.length,
+          0
+        )
+      : undefined;
+
+  const result = await sendTwilioContentInteractiveMessage(to, mapped.twilioRequest);
+
+  logger.info(
+    {
+      provider: "twilio",
+      contentType: mapped.contentType,
+      translatedPayloadType: translatedPayload.type,
+      twilioSid: result.sid,
+      contentSid: result.contentSid,
+      to,
+      buttonCount,
+      rowCount,
+    },
+    "Twilio interactive message sent via Content API"
+  );
 
   return {
-    providerMessageId: generateMockMessageId(),
+    providerMessageId: result.sid,
     provider: "twilio",
-    delivered: false,
+    delivered: true,
+    contentSid: result.contentSid,
+    contentType: mapped.contentType,
   };
 }
 
@@ -71,7 +72,8 @@ async function dispatchTransportPayload(payload, to) {
           {
             provider: "twilio",
             transportPayloadType: payload.type,
-            messageSid: result.sid,
+            contentType: "text",
+            twilioSid: result.sid,
             to,
           },
           "Twilio WhatsApp text message sent"

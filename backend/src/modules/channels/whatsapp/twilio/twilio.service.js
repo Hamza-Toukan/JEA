@@ -33,6 +33,52 @@ function getTwilioClient() {
  * @param {string} text Message body
  * @returns {Promise<{ sid: string }>}
  */
+/**
+ * Creates Twilio Content API resource and sends via Messages API using contentSid.
+ *
+ * @param {string} to
+ * @param {{ contentCreate: object, messageCreate: object }} mappedRequest
+ * @returns {Promise<{ sid: string, contentSid: string }>}
+ */
+async function sendTwilioContentInteractiveMessage(to, mappedRequest) {
+  if (!env.TWILIO_WHATSAPP_NUMBER || !String(env.TWILIO_WHATSAPP_NUMBER).trim()) {
+    throw new Error("TWILIO_WHATSAPP_NUMBER is not configured");
+  }
+
+  const formattedTo = formatWhatsAppAddress(to);
+  const formattedFrom = formatWhatsAppAddress(env.TWILIO_WHATSAPP_NUMBER);
+
+  if (!formattedTo) {
+    throw new Error("Invalid destination for Twilio WhatsApp send");
+  }
+
+  const client = getTwilioClient();
+
+  const contentCreateBody = {
+    ...mappedRequest.contentCreate,
+    language: mappedRequest.contentCreate.language || env.TWILIO_CONTENT_LANGUAGE,
+  };
+
+  const content = await client.content.v1.contents.create(contentCreateBody);
+
+  const messageParams = {
+    from: formattedFrom,
+    to: formattedTo,
+    contentSid: content.sid,
+  };
+
+  if (env.TWILIO_MESSAGING_SERVICE_SID) {
+    messageParams.messagingServiceSid = env.TWILIO_MESSAGING_SERVICE_SID;
+  }
+
+  const message = await client.messages.create(messageParams);
+
+  return {
+    sid: message.sid,
+    contentSid: content.sid,
+  };
+}
+
 async function sendTwilioMessage(to, text) {
   if (!env.TWILIO_WHATSAPP_NUMBER || !String(env.TWILIO_WHATSAPP_NUMBER).trim()) {
     throw new Error("TWILIO_WHATSAPP_NUMBER is not configured");
@@ -56,5 +102,7 @@ async function sendTwilioMessage(to, text) {
 
 module.exports = {
   sendTwilioMessage,
+  sendTwilioContentInteractiveMessage,
   formatWhatsAppAddress,
+  getTwilioClient,
 };
