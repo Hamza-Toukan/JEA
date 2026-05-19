@@ -9,7 +9,7 @@ describe("queue.factory", () => {
   it("builds stable BullMQ job id from provider message id", () => {
     assert.equal(
       buildProviderMessageJobId("twilio", "SM123456"),
-      "twilio:SM123456"
+      "twilio-SM123456"
     );
   });
 

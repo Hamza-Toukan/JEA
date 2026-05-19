@@ -16,7 +16,7 @@ const registeredWorkers = [];
  * @returns {string}
  */
 function buildProviderMessageJobId(provider, providerMessageId) {
-  return `${provider}:${providerMessageId}`;
+  return `${provider}-${providerMessageId}`;
 }
 
 function getQueueDefaultJobOptions(queueName) {
