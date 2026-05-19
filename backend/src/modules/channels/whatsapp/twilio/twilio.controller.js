@@ -1,8 +1,14 @@
+const { logger } = require("../../../../core/logger/logger");
+const { parseTwilioInboundMessage } = require("./twilio-inbound-parser");
 const {
   processIncomingMessage,
 } = require("../../../orchestrators/conversation-orchestrator.service");
-const { logger } = require("../../../../core/logger/logger");
-const { parseTwilioInboundMessage } = require("./twilio-inbound-parser");
+const {
+  isAsyncInboundProcessingEnabled,
+  enqueueInboundMessageJob,
+} = require("../../../../core/queue/inbound-message.queue");
+
+const TWIML_EMPTY = "<Response></Response>";
 
 function stripWhatsAppPrefix(from) {
   if (typeof from !== "string") {
@@ -15,8 +21,8 @@ async function handleTwilioWebhook(req, res) {
   const messageSid = req.body.MessageSid;
   const fromRaw = req.body.From;
   const parsedInbound = parseTwilioInboundMessage(req.body);
-
   const customerPhone = stripWhatsAppPrefix(fromRaw || "");
+  const webhookStartedAt = Date.now();
 
   logger.info(
     {
@@ -28,6 +34,7 @@ async function handleTwilioWebhook(req, res) {
       provider: "twilio",
       twilioSignatureValid:
         req.twilioSignatureValid === undefined ? null : req.twilioSignatureValid,
+      asyncInbound: isAsyncInboundProcessingEnabled(),
       interactiveReplyType:
         parsedInbound.interactiveReply?.interactiveReplyType || null,
       selectedId: parsedInbound.interactiveReply?.selectedId || null,
@@ -36,35 +43,77 @@ async function handleTwilioWebhook(req, res) {
     "Twilio WhatsApp webhook received"
   );
 
-  const twimlEmpty = "<Response></Response>";
-
   try {
     if (!messageSid) {
-      res.type("text/xml").send(twimlEmpty);
+      res.type("text/xml").send(TWIML_EMPTY);
       return;
     }
 
-    await processIncomingMessage({
+    const inboundPayload = {
       from: customerPhone,
       text: parsedInbound.text,
       provider: "twilio",
       providerMessageId: messageSid,
       metadata: parsedInbound.metadata,
-    });
+      requestId: req.requestId,
+    };
 
-    res.type("text/xml").send(twimlEmpty);
+    if (isAsyncInboundProcessingEnabled()) {
+      await enqueueInboundMessageJob(inboundPayload);
+
+      logger.info(
+        {
+          requestId: req.requestId,
+          providerMessageId: messageSid,
+          customerPhone,
+          durationMs: Date.now() - webhookStartedAt,
+        },
+        "Twilio webhook acknowledged; inbound job enqueued"
+      );
+
+      res.type("text/xml").send(TWIML_EMPTY);
+      return;
+    }
+
+    logger.warn(
+      {
+        requestId: req.requestId,
+        providerMessageId: messageSid,
+      },
+      "Async inbound processing disabled; falling back to synchronous orchestration"
+    );
+
+    await processIncomingMessage(inboundPayload);
+
+    logger.info(
+      {
+        requestId: req.requestId,
+        providerMessageId: messageSid,
+        durationMs: Date.now() - webhookStartedAt,
+      },
+      "Twilio webhook processed synchronously"
+    );
+
+    res.type("text/xml").send(TWIML_EMPTY);
   } catch (error) {
     logger.error(
       {
         requestId: req.requestId,
         MessageSid: messageSid || null,
         From: fromRaw || null,
+        customerPhone: customerPhone || null,
         errorMessage: error.message,
+        durationMs: Date.now() - webhookStartedAt,
       },
-      "Twilio WhatsApp webhook processing failed"
+      "Twilio WhatsApp webhook handling failed"
     );
 
-    res.type("text/xml").send(twimlEmpty);
+    if (isAsyncInboundProcessingEnabled()) {
+      res.status(503).type("text/xml").send(TWIML_EMPTY);
+      return;
+    }
+
+    res.type("text/xml").send(TWIML_EMPTY);
   }
 }
 

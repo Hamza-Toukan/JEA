@@ -38,7 +38,20 @@ const envSchema = z.object({
   /** Set to "true" in local development to skip Twilio signature validation. */
   TWILIO_SKIP_SIGNATURE_VALIDATION: z.enum(["true", "false"]).default("false"),
 
-  ENABLE_OUTBOUND_RETRY_WORKER: z.enum(["true", "false"]).default("true"),
+  REDIS_URL: z.string().optional(),
+
+  ENABLE_ASYNC_INBOUND_PROCESSING: z.enum(["true", "false"]).default("true"),
+  ENABLE_OUTBOUND_RETRY_QUEUE: z.enum(["true", "false"]).default("true"),
+
+  INBOUND_QUEUE_CONCURRENCY: z.coerce.number().int().min(1).max(50).default(5),
+  INBOUND_JOB_ATTEMPTS: z.coerce.number().int().min(1).max(10).default(3),
+  INBOUND_JOB_BACKOFF_MS: z.coerce.number().int().min(500).default(5000),
+
+  QUEUE_REMOVE_ON_COMPLETE_COUNT: z.coerce.number().int().min(10).default(200),
+  QUEUE_REMOVE_ON_FAIL_COUNT: z.coerce.number().int().min(10).default(500),
+
+  /** @deprecated Phase A interval worker — use ENABLE_OUTBOUND_RETRY_QUEUE + worker process */
+  ENABLE_OUTBOUND_RETRY_WORKER: z.enum(["true", "false"]).default("false"),
   OUTBOUND_DELIVERY_MAX_ATTEMPTS: z.coerce.number().int().min(1).default(5),
   OUTBOUND_RETRY_INTERVAL_MS: z.coerce.number().int().min(5000).default(60000),
   OUTBOUND_RETRY_BATCH_SIZE: z.coerce.number().int().min(1).max(100).default(20),
