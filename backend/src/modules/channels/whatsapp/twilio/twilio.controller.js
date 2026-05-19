@@ -16,13 +16,20 @@ async function handleTwilioWebhook(req, res) {
   const fromRaw = req.body.From;
   const parsedInbound = parseTwilioInboundMessage(req.body);
 
+  const customerPhone = stripWhatsAppPrefix(fromRaw || "");
+
   logger.info(
     {
       requestId: req.requestId,
       MessageSid: messageSid || null,
+      providerMessageId: messageSid || null,
       From: fromRaw || null,
+      customerPhone: customerPhone || null,
       provider: "twilio",
-      interactiveReplyType: parsedInbound.interactiveReply?.interactiveReplyType || null,
+      twilioSignatureValid:
+        req.twilioSignatureValid === undefined ? null : req.twilioSignatureValid,
+      interactiveReplyType:
+        parsedInbound.interactiveReply?.interactiveReplyType || null,
       selectedId: parsedInbound.interactiveReply?.selectedId || null,
       selectedTitle: parsedInbound.interactiveReply?.selectedTitle || null,
     },
@@ -37,10 +44,8 @@ async function handleTwilioWebhook(req, res) {
       return;
     }
 
-    const from = stripWhatsAppPrefix(fromRaw || "");
-
     await processIncomingMessage({
-      from,
+      from: customerPhone,
       text: parsedInbound.text,
       provider: "twilio",
       providerMessageId: messageSid,

@@ -31,8 +31,9 @@ app.use(
   }),
 );
 
-app.use(express.json({ limit: "1mb" }));
-app.use(express.urlencoded({ extended: true }));
+const {
+  validateTwilioSignatureMiddleware,
+} = require("./modules/channels/whatsapp/twilio/middleware/twilio-signature.middleware");
 
 app.use(
   morgan(env.NODE_ENV === "production" ? "combined" : "dev", {
@@ -56,7 +57,18 @@ app.use(
 app.use("/api/health", healthRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/dev/mock-whatsapp", mockWhatsappRoutes);
-app.use("/api/whatsapp/twilio", twilioWhatsappRoutes);
+
+// Twilio webhooks: urlencoded (extended:false) required for signature validation
+app.use(
+  "/api/whatsapp/twilio",
+  express.urlencoded({ extended: false }),
+  validateTwilioSignatureMiddleware,
+  twilioWhatsappRoutes
+);
+
+app.use(express.json({ limit: "1mb" }));
+app.use(express.urlencoded({ extended: true }));
+
 app.use("/api/conversations", conversationRoutes);
 
 if (env.ENABLE_MOCK_WHATSAPP === "true") {

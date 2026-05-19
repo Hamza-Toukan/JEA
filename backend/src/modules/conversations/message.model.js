@@ -56,7 +56,29 @@ const messageSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Message",
       default: null,
-    }
+    },
+
+    deliveryStatus: {
+      type: String,
+      enum: ["pending", "sent", "failed"],
+      default: null,
+      index: true,
+    },
+
+    deliveryAttempts: {
+      type: Number,
+      default: 0,
+    },
+
+    lastDeliveryError: {
+      type: String,
+      default: null,
+    },
+
+    sentAt: {
+      type: Date,
+      default: null,
+    },
   },
   {
     timestamps: true
@@ -81,6 +103,13 @@ messageSchema.index(
     },
   }
 );
+
+messageSchema.index({
+  deliveryStatus: 1,
+  deliveryAttempts: 1,
+  direction: 1,
+  senderType: 1,
+});
 
 const Message = mongoose.model("Message", messageSchema);
 

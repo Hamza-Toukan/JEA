@@ -2,11 +2,12 @@ const {
   handleIncomingCustomerMessage,
   saveBotReply,
   findExistingBotReplyForInbound,
-  updateOutboundMessageProviderId,
-  patchOutboundMessageMetadata,
 } = require("../conversations/conversation.service");
+const {
+  deliverOutboundMessage,
+  DELIVERY_STATUS,
+} = require("../conversations/outbound-delivery.service");
 const { routeConversationState } = require("../conversations/state-machine/state-router");
-const { sendMessage } = require("../channels/messaging.service");
 const {
   buildInteractiveMessage,
 } = require("../channels/whatsapp/builders/interactive-message.builder");
@@ -62,6 +63,26 @@ async function processIncomingMessage(params) {
     );
 
     if (existingOutbound) {
+      const transportPayload = existingOutbound.metadata?.transportPayload;
+      const needsRedelivery =
+        transportPayload &&
+        (existingOutbound.deliveryStatus === DELIVERY_STATUS.FAILED ||
+          existingOutbound.deliveryStatus === DELIVERY_STATUS.PENDING);
+
+      if (needsRedelivery) {
+        await deliverOutboundMessage({
+          outboundMessageId: existingOutbound._id,
+          to: inbound.from,
+          transportPayload,
+          logContext: {
+            conversationId: String(conversation._id),
+            resolvedTemplateKey:
+              existingOutbound.metadata?.resolvedTemplateKey || null,
+            source: "duplicate-inbound-retry",
+          },
+        });
+      }
+
       return {
         conversation,
         inboundMessage,
@@ -216,53 +237,19 @@ async function processIncomingMessage(params) {
     },
   });
 
-  try {
-    const sendResult = await sendMessage({
-      channel: "whatsapp",
-      to: inbound.from,
-      payload: transportPayload,
-    });
-
-    if (
-      sendResult?.providerMessageId &&
-      outboundMessage?._id &&
-      sendResult.delivered !== false
-    ) {
-      await updateOutboundMessageProviderId(
-        outboundMessage._id,
-        sendResult.providerMessageId
-      );
-
-      if (sendResult.templateDelivery) {
-        await patchOutboundMessageMetadata(outboundMessage._id, {
-          templateKey: sendResult.templateDelivery.templateKey,
-          contentSid: sendResult.templateDelivery.contentSid,
-          templateVariables: sendResult.templateDelivery.templateVariables,
-          templateCategory: sendResult.templateDelivery.templateCategory,
-        });
-      }
-
-      logger.info(
-        {
-          conversationId: String(conversationAfterState._id),
-          providerMessageId: sendResult.providerMessageId,
-          transportPayloadType: transportPayload.type,
-          contentType: sendResult.contentType || transportPayload.type,
-          templateKey: sendResult.templateDelivery?.templateKey,
-        },
-        "Outbound message provider id persisted"
-      );
-    }
-  } catch (error) {
-    logger.error(
-      {
-        conversationId: String(conversationAfterState._id),
-        provider: activeProvider,
-        errorMessage: error.message,
-      },
-      "Outbound WhatsApp delivery failed after bot reply was persisted"
-    );
-  }
+  await deliverOutboundMessage({
+    outboundMessageId: outboundMessage._id,
+    to: inbound.from,
+    transportPayload,
+    logContext: {
+      conversationId: String(conversationAfterState._id),
+      provider: activeProvider,
+      resolvedTemplateKey:
+        structuralDelivery?.templateKey ||
+        (isApprovedTemplate ? transportPayload.templateKey : null),
+      source: "orchestrator",
+    },
+  });
 
   return {
     conversation: conversationAfterState,

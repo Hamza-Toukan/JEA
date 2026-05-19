@@ -57,6 +57,8 @@ async function createMessage({
   messageType = "text",
   metadata = {},
   correlationInboundMessageId = null,
+  deliveryStatus = null,
+  deliveryAttempts = 0,
 }) {
   try {
     const message = await Message.create({
@@ -69,6 +71,8 @@ async function createMessage({
       messageType,
       metadata,
       correlationInboundMessageId,
+      deliveryStatus,
+      deliveryAttempts,
     });
     return { message, isDuplicate: false };
   } catch (error) {
@@ -263,6 +267,8 @@ async function saveBotReply({
     messageType,
     metadata,
     correlationInboundMessageId,
+    deliveryStatus: "pending",
+    deliveryAttempts: 0,
   });
 
   if (!isDuplicate) {

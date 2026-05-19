@@ -33,6 +33,21 @@ const envSchema = z.object({
   TWILIO_MESSAGING_SERVICE_SID: z.string().optional(),
   TWILIO_CONTENT_LANGUAGE: z.string().default("ar"),
 
+  /** Full public webhook URL Twilio signs against (required in production when validation is on). */
+  TWILIO_WEBHOOK_PUBLIC_URL: z.string().url().optional(),
+  /** Set to "true" in local development to skip Twilio signature validation. */
+  TWILIO_SKIP_SIGNATURE_VALIDATION: z.enum(["true", "false"]).default("false"),
+
+  ENABLE_OUTBOUND_RETRY_WORKER: z.enum(["true", "false"]).default("true"),
+  OUTBOUND_DELIVERY_MAX_ATTEMPTS: z.coerce.number().int().min(1).default(5),
+  OUTBOUND_RETRY_INTERVAL_MS: z.coerce.number().int().min(5000).default(60000),
+  OUTBOUND_RETRY_BATCH_SIZE: z.coerce.number().int().min(1).max(100).default(20),
+  OUTBOUND_RETRY_BACKOFF_BASE_MS: z.coerce
+    .number()
+    .int()
+    .min(1000)
+    .default(30000),
+
   TWILIO_TEMPLATE_VERIFICATION_SUCCESS_SID: z.string().optional(),
   TWILIO_TEMPLATE_TICKET_CREATED_SID: z.string().optional(),
 
