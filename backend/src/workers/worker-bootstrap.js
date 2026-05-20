@@ -36,7 +36,8 @@ let activeWorkers = [];
 async function startWorkers() {
   if (!isRedisConfigured()) {
     throw new Error(
-      "Worker process requires REDIS_URL when queue processing is enabled"
+      "Worker process requires REDIS_URL (e.g. redis://127.0.0.1:6379). " +
+        "Start Redis locally, set REDIS_URL in .env, then run npm run dev:worker"
     );
   }
 

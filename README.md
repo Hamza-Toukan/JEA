@@ -20,6 +20,7 @@ Build a service platform that supports:
 
 ```text
 backend/     # Node.js API (Express + MongoDB)
+frontend/    # React admin dashboard (RTL, Tailwind)
 docs/        # Architecture notes and ADRs
 ```
 
@@ -57,6 +58,16 @@ npm run dev
 ```
 
 The API listens on `PORT` (default `5000`).
+
+## Frontend admin dashboard
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Opens at [http://localhost:5173](http://localhost:5173) with RTL layout and JEA-branded design system. See `frontend/README.md`.
 
 ## Mock WhatsApp (development)
 
