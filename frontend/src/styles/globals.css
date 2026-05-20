@@ -1,0 +1,39 @@
+@layer base {
+  html {
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    @apply bg-jea-bg text-jea-text text-sm leading-relaxed;
+  }
+
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: #c5d4e3 transparent;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-jea-cyan);
+    outline-offset: 2px;
+  }
+}
+
+@layer utilities {
+  .jea-gradient-sidebar {
+    background: linear-gradient(180deg, #073264 0%, #062b5b 55%, #051f45 100%);
+  }
+
+  .jea-gradient-accent {
+    background: linear-gradient(135deg, #dceaf7 0%, #e8f2fa 50%, #f5f7fa 100%);
+  }
+
+  .jea-gradient-header {
+    background: linear-gradient(90deg, #f5f7fa 0%, #ffffff 40%, #f5f7fa 100%);
+  }
+
+  .jea-focus-ring {
+    @apply focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-jea-cyan;
+  }
+}

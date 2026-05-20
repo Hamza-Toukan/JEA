@@ -1,10 +1,11 @@
 import { cn } from "../../lib/cn";
 
-export function Card({ className, children }) {
+export function Card({ className, children, padding = false }) {
   return (
     <div
       className={cn(
         "rounded-xl border border-jea-border-soft bg-jea-surface shadow-jea-sm",
+        padding && "p-5",
         className
       )}
     >
@@ -37,4 +38,17 @@ export function CardHeader({ className, title, description, action, children }) 
 
 export function CardBody({ className, children }) {
   return <div className={cn("p-5", className)}>{children}</div>;
+}
+
+export function CardFooter({ className, children }) {
+  return (
+    <div
+      className={cn(
+        "flex flex-wrap items-center gap-2 border-t border-jea-border-soft px-5 py-4",
+        className
+      )}
+    >
+      {children}
+    </div>
+  );
 }

@@ -17,7 +17,7 @@ export function StatCard({
   };
 
   return (
-    <Card className="overflow-hidden">
+    <Card>
       <CardBody className="flex items-start justify-between gap-4 p-4">
         <div className="min-w-0">
           <p className="text-xs font-medium text-jea-text-muted">{label}</p>
@@ -37,7 +37,7 @@ export function StatCard({
               iconBg
             )}
           >
-            <Icon className={cn("h-5 w-5", iconColor)} />
+            <Icon className={cn("h-5 w-5", iconColor)} aria-hidden />
           </div>
         )}
       </CardBody>

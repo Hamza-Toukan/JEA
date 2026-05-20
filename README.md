@@ -67,7 +67,7 @@ npm install
 npm run dev
 ```
 
-Opens at [http://localhost:5173](http://localhost:5173) with RTL layout and JEA-branded design system. See `frontend/README.md`.
+Opens at [http://localhost:5173](http://localhost:5173). See `frontend/README.md` for the feature-based architecture, design system, API layer, and Zustand stores.
 
 ## Mock WhatsApp (development)
 

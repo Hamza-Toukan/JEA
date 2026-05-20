@@ -1,0 +1,66 @@
+/**
+ * JEA Admin Platform — design tokens
+ * Aligned with jea.org.jo: navy, soft cyan, white surfaces
+ */
+@theme {
+  /* Typography */
+  --font-sans: "IBM Plex Sans Arabic", system-ui, sans-serif;
+  --font-mono: ui-monospace, monospace;
+
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.25rem;
+  --text-2xl: 1.5rem;
+
+  /* Spacing scale (4px base) */
+  --spacing-page: 1.5rem;
+  --spacing-section: 1.5rem;
+  --spacing-card: 1.25rem;
+
+  /* Radius */
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+
+  /* Brand */
+  --color-jea-navy: #062b5b;
+  --color-jea-navy-mid: #0b3d91;
+  --color-jea-navy-soft: #1a4f8c;
+  --color-jea-cyan: #3d8fd1;
+  --color-jea-cyan-light: #dceaf7;
+  --color-jea-cyan-muted: #e8f2fa;
+
+  /* Surfaces */
+  --color-jea-bg: #f5f7fa;
+  --color-jea-surface: #ffffff;
+  --color-jea-border: #e2e8f0;
+  --color-jea-border-soft: #edf2f7;
+
+  /* Text */
+  --color-jea-text: #062b5b;
+  --color-jea-text-muted: #5a6b7d;
+  --color-jea-text-subtle: #8b9aab;
+
+  /* Semantic */
+  --color-jea-success: #18a957;
+  --color-jea-success-bg: #e8f7ef;
+  --color-jea-warning: #c47d0e;
+  --color-jea-warning-bg: #fef6e8;
+  --color-jea-danger: #c53030;
+  --color-jea-danger-bg: #fef2f2;
+  --color-jea-info: #0b3d91;
+  --color-jea-info-bg: #e8f2fa;
+
+  /* Shadows */
+  --shadow-jea-sm: 0 1px 2px 0 rgb(6 43 91 / 0.04);
+  --shadow-jea-md: 0 4px 12px -2px rgb(6 43 91 / 0.08);
+  --shadow-jea-lg: 0 8px 24px -4px rgb(6 43 91 / 0.1);
+
+  /* Motion */
+  --ease-jea: cubic-bezier(0.4, 0, 0.2, 1);
+  --duration-fast: 150ms;
+  --duration-normal: 200ms;
+}
