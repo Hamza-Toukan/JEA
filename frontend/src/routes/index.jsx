@@ -1,24 +1,29 @@
 import { Routes, Route, Navigate } from "react-router-dom";
-import { AdminLayout } from "../layouts/AdminLayout";
-import { ROUTES, DEFAULT_ROUTE } from "../constants";
-import { DashboardPage } from "../features/dashboard";
-import { InboxPage } from "../features/inbox";
-import { KnowledgeBasePage } from "../features/knowledge-base";
-import { WorkflowsPage } from "../features/workflows";
-import { AnalyticsPage } from "../features/analytics";
-import { SettingsPage } from "../features/settings";
+import { APP_CONFIG } from "@/config/app";
+import { DEFAULT_ROUTE } from "@/constants";
+import { AppShell } from "@/layouts/AppShell";
+import { ProtectedRoute } from "./ProtectedRoute";
+import { APP_ROUTES } from "./routes.config";
+
+const AUTH_GUARD_ENABLED = APP_CONFIG.authGuardEnabled;
 
 export function AppRoutes() {
   return (
     <Routes>
-      <Route element={<AdminLayout />}>
+      <Route element={<AppShell />}>
         <Route index element={<Navigate to={DEFAULT_ROUTE} replace />} />
-        <Route path={ROUTES.DASHBOARD.slice(1)} element={<DashboardPage />} />
-        <Route path={ROUTES.INBOX.slice(1)} element={<InboxPage />} />
-        <Route path={ROUTES.KNOWLEDGE_BASE.slice(1)} element={<KnowledgeBasePage />} />
-        <Route path={ROUTES.WORKFLOWS.slice(1)} element={<WorkflowsPage />} />
-        <Route path={ROUTES.ANALYTICS.slice(1)} element={<AnalyticsPage />} />
-        <Route path={ROUTES.SETTINGS.slice(1)} element={<SettingsPage />} />
+
+        {APP_ROUTES.map(({ path, element: Page, protected: isProtected }) => (
+          <Route
+            key={path}
+            path={path}
+            element={
+              <ProtectedRoute enabled={isProtected && AUTH_GUARD_ENABLED}>
+                <Page />
+              </ProtectedRoute>
+            }
+          />
+        ))}
       </Route>
     </Routes>
   );

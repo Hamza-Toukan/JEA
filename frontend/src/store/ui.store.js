@@ -1,10 +1,11 @@
 import { create } from "zustand";
 
 /**
- * Global UI chrome state (sidebar, theme prep, drawers).
+ * Global UI chrome — sidebar, mobile nav, theme (future).
  */
 export const useUiStore = create((set) => ({
   sidebarCollapsed: false,
+  mobileNavOpen: false,
   theme: "light",
 
   toggleSidebar: () =>
@@ -12,5 +13,14 @@ export const useUiStore = create((set) => ({
 
   setSidebarCollapsed: (sidebarCollapsed) => set({ sidebarCollapsed }),
 
-  setTheme: (theme) => set({ theme }),
+  setMobileNavOpen: (mobileNavOpen) => set({ mobileNavOpen }),
+
+  closeMobileNav: () => set({ mobileNavOpen: false }),
+
+  setTheme: (theme) => {
+    if (typeof document !== "undefined") {
+      document.documentElement.setAttribute("data-theme", theme);
+    }
+    set({ theme });
+  },
 }));

@@ -1,39 +1,59 @@
+/**
+ * App shell defaults and minimal reset.
+ * Typography, RTL, scrollbars, and utilities live in sibling modules.
+ */
+
 @layer base {
   html {
-    font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
   }
 
   body {
-    @apply bg-jea-bg text-jea-text text-sm leading-relaxed;
+    min-height: 100dvh;
+    margin: 0;
+    background-color: var(--color-background);
+    color: var(--color-text);
   }
 
-  * {
-    scrollbar-width: thin;
-    scrollbar-color: #c5d4e3 transparent;
+  #root {
+    min-height: 100dvh;
+    isolation: isolate;
+  }
+
+  button,
+  input,
+  select,
+  textarea {
+    font: inherit;
+    color: inherit;
+  }
+
+  button {
+    cursor: pointer;
+  }
+
+  button:disabled {
+    cursor: not-allowed;
+  }
+
+  table {
+    border-collapse: collapse;
+  }
+
+  img,
+  svg {
+    display: block;
+    max-width: 100%;
+  }
+
+  :focus {
+    outline: none;
   }
 
   :focus-visible {
-    outline: 2px solid var(--color-jea-cyan);
+    outline: 2px solid var(--color-accent);
     outline-offset: 2px;
-  }
-}
-
-@layer utilities {
-  .jea-gradient-sidebar {
-    background: linear-gradient(180deg, #073264 0%, #062b5b 55%, #051f45 100%);
-  }
-
-  .jea-gradient-accent {
-    background: linear-gradient(135deg, #dceaf7 0%, #e8f2fa 50%, #f5f7fa 100%);
-  }
-
-  .jea-gradient-header {
-    background: linear-gradient(90deg, #f5f7fa 0%, #ffffff 40%, #f5f7fa 100%);
-  }
-
-  .jea-focus-ring {
-    @apply focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-jea-cyan;
   }
 }

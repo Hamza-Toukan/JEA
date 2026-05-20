@@ -1,0 +1,73 @@
+/**
+ * Default light theme — Tailwind v4 @theme bridge.
+ * Maps design tokens to utility class names.
+ */
+
+@theme {
+  --font-sans: var(--font-family-sans);
+  --font-mono: var(--font-family-mono);
+
+  --color-primary: var(--color-primary);
+  --color-primary-hover: var(--color-primary-hover);
+  --color-primary-active: var(--color-primary-active);
+  --color-primary-muted: var(--color-primary-muted);
+
+  --color-accent: var(--color-accent);
+  --color-accent-hover: var(--color-accent-hover);
+  --color-accent-subtle: var(--color-accent-subtle);
+  --color-accent-muted: var(--color-accent-muted);
+
+  --color-background: var(--color-background);
+  --color-surface: var(--color-surface);
+  --color-surface-raised: var(--color-surface-raised);
+  --color-surface-sunken: var(--color-surface-sunken);
+
+  --color-border: var(--color-border);
+  --color-border-subtle: var(--color-border-subtle);
+  --color-border-strong: var(--color-border-strong);
+
+  --color-foreground: var(--color-text);
+  --color-muted: var(--color-text-secondary);
+  --color-subtle: var(--color-text-tertiary);
+
+  --color-success: var(--color-success);
+  --color-success-subtle: var(--color-success-subtle);
+  --color-warning: var(--color-warning);
+  --color-warning-subtle: var(--color-warning-subtle);
+  --color-error: var(--color-error);
+  --color-error-subtle: var(--color-error-subtle);
+  --color-info: var(--color-info);
+  --color-info-subtle: var(--color-info-subtle);
+
+  /* Legacy jea-* aliases */
+  --color-jea-navy: var(--color-primary);
+  --color-jea-navy-mid: var(--color-primary-hover);
+  --color-jea-navy-soft: var(--color-primary-muted);
+  --color-jea-cyan: var(--color-accent);
+  --color-jea-cyan-light: var(--color-accent-subtle);
+  --color-jea-cyan-muted: var(--color-accent-muted);
+  --color-jea-bg: var(--color-background);
+  --color-jea-surface: var(--color-surface);
+  --color-jea-border: var(--color-border);
+  --color-jea-border-soft: var(--color-border-subtle);
+  --color-jea-text: var(--color-text);
+  --color-jea-text-muted: var(--color-text-secondary);
+  --color-jea-text-subtle: var(--color-text-tertiary);
+  --color-jea-success: var(--color-success);
+  --color-jea-success-bg: var(--color-success-subtle);
+  --color-jea-warning: var(--color-warning);
+  --color-jea-warning-bg: var(--color-warning-subtle);
+  --color-jea-danger: var(--color-error);
+  --color-jea-danger-bg: var(--color-error-subtle);
+  --color-jea-info: var(--color-info);
+  --color-jea-info-bg: var(--color-info-subtle);
+
+  --shadow-jea-sm: var(--shadow-sm);
+  --shadow-jea-md: var(--shadow-md);
+  --shadow-jea-lg: var(--shadow-lg);
+
+  --radius-jea-sm: var(--radius-sm);
+  --radius-jea-md: var(--radius-md);
+  --radius-jea-lg: var(--radius-lg);
+  --radius-jea-xl: var(--radius-xl);
+}

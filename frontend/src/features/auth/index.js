@@ -1,2 +1,1 @@
-/** Auth feature — login/session pages (placeholder). */
-export {};
+export { useAuthBootstrap } from "./hooks";

@@ -1,4 +1,4 @@
-import { cn } from "../../lib/cn";
+import { cn } from "@/lib/cn";
 import { Card, CardBody } from "./Card";
 
 export function StatCard({
@@ -7,21 +7,21 @@ export function StatCard({
   change,
   changeType = "neutral",
   icon: Icon,
-  iconBg = "bg-jea-cyan-muted",
-  iconColor = "text-jea-navy-mid",
+  iconBg = "bg-accent-muted",
+  iconColor = "text-primary-hover",
 }) {
   const changeColors = {
-    up: "text-jea-success",
-    down: "text-jea-danger",
-    neutral: "text-jea-text-muted",
+    up: "text-success",
+    down: "text-error",
+    neutral: "text-muted",
   };
 
   return (
     <Card>
       <CardBody className="flex items-start justify-between gap-4 p-4">
         <div className="min-w-0">
-          <p className="text-xs font-medium text-jea-text-muted">{label}</p>
-          <p className="mt-1 text-2xl font-semibold tracking-tight text-jea-navy">
+          <p className="text-xs font-medium text-muted">{label}</p>
+          <p className="mt-1 text-2xl font-semibold tracking-tight text-primary">
             {value}
           </p>
           {change && (

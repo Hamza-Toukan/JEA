@@ -1,10 +1,10 @@
-import { cn } from "../../lib/cn";
+import { cn } from "@/lib/cn";
 
 export function Skeleton({ className }) {
   return (
     <div
       className={cn(
-        "animate-pulse rounded-md bg-jea-cyan-muted/60",
+        "animate-pulse rounded-md bg-accent-muted/60",
         className
       )}
       aria-hidden
@@ -14,7 +14,7 @@ export function Skeleton({ className }) {
 
 export function SkeletonText({ lines = 3, className }) {
   return (
-    <div className={cn("space-y-2", className)}>
+    <div className={cn("space-y-2", className)} aria-hidden>
       {Array.from({ length: lines }).map((_, i) => (
         <Skeleton
           key={i}
@@ -29,9 +29,10 @@ export function SkeletonCard({ className }) {
   return (
     <div
       className={cn(
-        "rounded-xl border border-jea-border-soft bg-jea-surface p-5 space-y-4",
+        "space-y-4 rounded-xl border border-border-subtle bg-surface p-5",
         className
       )}
+      aria-hidden
     >
       <Skeleton className="h-4 w-1/3" />
       <Skeleton className="h-8 w-1/2" />

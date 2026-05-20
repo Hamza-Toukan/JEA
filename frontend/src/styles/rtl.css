@@ -1,0 +1,23 @@
+/**
+ * RTL document direction and logical layout helpers.
+ */
+
+@layer base {
+  html {
+    direction: rtl;
+  }
+}
+
+@layer utilities {
+  .ui-inset-inline-start-0 {
+    inset-inline-start: 0;
+  }
+
+  .ui-text-start {
+    text-align: start;
+  }
+
+  .ui-text-end {
+    text-align: end;
+  }
+}

@@ -1,80 +1,85 @@
-import { cn } from "../../lib/cn";
+import { forwardRef } from "react";
+import { cn } from "@/lib/cn";
+import { inputVariants } from "@/lib/component-variants";
 
-const fieldClass =
-  "h-9 w-full rounded-lg border border-jea-border bg-jea-surface text-sm text-jea-text placeholder:text-jea-text-subtle transition-colors focus:border-jea-cyan focus:outline-none focus:ring-2 focus:ring-jea-cyan/20 disabled:cursor-not-allowed disabled:opacity-50";
-
-export function Input({
-  className,
-  icon: Icon,
-  error,
-  id,
-  "aria-label": ariaLabel,
-  ...props
-}) {
+export const Input = forwardRef(function Input(
+  { className, icon: Icon, error, id, "aria-label": ariaLabel, ...props },
+  ref
+) {
   return (
     <div className="w-full">
       <div className="relative">
         {Icon && (
           <Icon
-            className="pointer-events-none absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-jea-text-subtle"
+            className="pointer-events-none absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-subtle"
             aria-hidden
           />
         )}
         <input
+          ref={ref}
           id={id}
           aria-label={ariaLabel}
           aria-invalid={error ? true : undefined}
-          className={cn(fieldClass, Icon && "ps-9 pe-3", !Icon && "px-3", className)}
+          className={cn(
+            inputVariants.field,
+            Icon ? inputVariants.iconOffset : inputVariants.plainPadding,
+            className
+          )}
           {...props}
         />
       </div>
       {error && (
-        <p className="mt-1 text-xs text-jea-danger" role="alert">
+        <p className="mt-1 text-xs text-error" role="alert">
           {error}
         </p>
       )}
     </div>
   );
-}
+});
 
-export function Select({ className, error, children, id, ...props }) {
+export const Select = forwardRef(function Select(
+  { className, error, children, id, ...props },
+  ref
+) {
   return (
     <div className="w-full">
       <select
+        ref={ref}
         id={id}
         aria-invalid={error ? true : undefined}
-        className={cn(fieldClass, "px-3", className)}
+        className={cn(inputVariants.field, inputVariants.plainPadding, className)}
         {...props}
       >
         {children}
       </select>
       {error && (
-        <p className="mt-1 text-xs text-jea-danger" role="alert">
+        <p className="mt-1 text-xs text-error" role="alert">
           {error}
         </p>
       )}
     </div>
   );
-}
+});
 
-export function Textarea({ className, error, id, rows = 4, ...props }) {
+export const Textarea = forwardRef(function Textarea(
+  { className, error, id, rows = 4, ...props },
+  ref
+) {
   return (
     <div className="w-full">
       <textarea
+        ref={ref}
         id={id}
         rows={rows}
         aria-invalid={error ? true : undefined}
-        className={cn(
-          "min-h-[100px] w-full resize-y rounded-lg border border-jea-border bg-jea-surface px-3 py-2 text-sm text-jea-text placeholder:text-jea-text-subtle transition-colors focus:border-jea-cyan focus:outline-none focus:ring-2 focus:ring-jea-cyan/20 disabled:opacity-50",
-          className
-        )}
+        className={cn(inputVariants.textarea, className)}
         {...props}
       />
       {error && (
-        <p className="mt-1 text-xs text-jea-danger" role="alert">
+        <p className="mt-1 text-xs text-error" role="alert">
           {error}
         </p>
       )}
     </div>
   );
-}
+});

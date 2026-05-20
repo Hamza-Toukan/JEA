@@ -1,4 +1,6 @@
-import { cn } from "../../lib/cn";
+import { cn } from "@/lib/cn";
+import { tableVariants } from "@/lib/component-variants";
+import { EmptyState } from "@/components/feedback";
 
 /**
  * @typedef {Object} Column
@@ -16,22 +18,27 @@ export function DataTable({
   selectedKey,
   emptyMessage = "لا توجد بيانات",
   className,
+  "aria-label": ariaLabel,
 }) {
   if (!data?.length) {
     return (
-      <p className="py-8 text-center text-sm text-jea-text-muted">{emptyMessage}</p>
+      <EmptyState
+        title={emptyMessage}
+        className="border-none bg-transparent py-8"
+      />
     );
   }
 
   return (
-    <div className={cn("overflow-x-auto", className)}>
-      <table className="w-full text-sm">
+    <div className={cn("overflow-x-auto -mx-1 px-1", className)}>
+      <table className="w-full min-w-[480px] text-sm" aria-label={ariaLabel}>
         <thead>
-          <tr className="border-b border-jea-border-soft bg-jea-bg/80 text-xs text-jea-text-muted">
+          <tr className={tableVariants.head}>
             {columns.map((col) => (
               <th
                 key={col.key}
-                className={cn("px-4 py-3 text-start font-medium", col.className)}
+                scope="col"
+                className={cn(tableVariants.headCell, col.className)}
               >
                 {col.header}
               </th>
@@ -47,16 +54,27 @@ export function DataTable({
               <tr
                 key={key}
                 onClick={onRowClick ? () => onRowClick(row) : undefined}
+                onKeyDown={
+                  onRowClick
+                    ? (e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          onRowClick(row);
+                        }
+                      }
+                    : undefined
+                }
+                tabIndex={onRowClick ? 0 : undefined}
                 className={cn(
-                  "border-b border-jea-border-soft transition-colors",
-                  onRowClick && "cursor-pointer",
-                  selected ? "bg-jea-cyan-muted/40" : "hover:bg-jea-bg"
+                  tableVariants.row,
+                  onRowClick && tableVariants.rowInteractive,
+                  selected && tableVariants.rowSelected
                 )}
               >
                 {columns.map((col) => (
                   <td
                     key={col.key}
-                    className={cn("px-4 py-3 text-jea-navy", col.className)}
+                    className={cn(tableVariants.cell, col.className)}
                   >
                     {col.render ? col.render(row) : row[col.key]}
                   </td>

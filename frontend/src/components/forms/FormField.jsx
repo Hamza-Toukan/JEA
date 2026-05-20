@@ -14,11 +14,11 @@ export function FormField({
       {label && (
         <label
           htmlFor={htmlFor}
-          className="block text-xs font-medium text-jea-text-muted"
+          className="block text-xs font-medium text-muted"
         >
           {label}
           {required && (
-            <span className="text-jea-danger ms-0.5" aria-hidden>
+            <span className="text-error ms-0.5" aria-hidden>
               *
             </span>
           )}
@@ -26,10 +26,10 @@ export function FormField({
       )}
       {children}
       {hint && !error && (
-        <p className="text-[11px] text-jea-text-subtle">{hint}</p>
+        <p className="text-[11px] text-subtle">{hint}</p>
       )}
       {error && (
-        <p className="text-xs text-jea-danger" role="alert">
+        <p className="text-xs text-error" role="alert">
           {error}
         </p>
       )}

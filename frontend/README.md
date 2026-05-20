@@ -23,7 +23,7 @@ src/
 ├── lib/              # cn(), variants()
 ├── utils/
 ├── constants/        # routes, navigation, status
-├── styles/           # tokens.css, globals.css
+├── styles/           # tokens, theme, globals, typography, rtl, utilities, …
 └── assets/
 ```
 
@@ -41,11 +41,35 @@ npm run build
 |----------|-------------|
 | `VITE_API_BASE_URL` | Backend API base (empty = same origin + Vite proxy) |
 
-## Design system
+## Design system (foundation layer)
 
-- Tokens: `src/styles/tokens.css`
-- Components: `import { Button, Card } from "@/components/ui"`
-- Semantic feedback: `@/components/feedback`
+| Layer | Path |
+|-------|------|
+| Styles | `src/styles/` — tokens, theme, layered CSS |
+| API | `src/services/` — request layer + domain services |
+| Queries | `@tanstack/react-query` + `src/lib/query-keys.js` |
+| Auth | `src/store/auth.store.js` + `ProtectedRoute` / `RoleRoute` |
+| Errors | `AsyncState`, `Toaster`, `handleApiError` |
+| Variants | `src/lib/component-variants.js` |
+| Shell | `src/layouts/AppShell.jsx` |
+
+See `ARCHITECTURE.md` and `STANDARDS.md`.
+
+### Environment (integration)
+
+| Variable | Default | Purpose |
+|----------|---------|---------|
+| `VITE_API_ENABLED` | `false` | Enable live API fetches |
+| `VITE_AUTH_GUARD` | `false` | Enforce auth on routes |
+| `VITE_API_BASE_URL` | `""` | API origin (Vite proxy `/api` in dev) |
+| `VITE_API_TIMEOUT_MS` | `30000` | Request timeout |
+| `VITE_INBOX_POLL_MS` | `30000` | Inbox polling interval |
+
+```js
+import { Button, Card } from "@/components/ui";
+import { Alert, Skeleton } from "@/components/feedback";
+import { PageContainer, SectionHeader } from "@/components/layout";
+```
 
 Brand aligned with [jea.org.jo](https://www.jea.org.jo/Default/Ar): navy, soft cyan, institutional surfaces.
 
