@@ -85,6 +85,8 @@ if (!parsed.success) {
   process.exit(1);
 }
 
+console.log("ℹ️ Loaded configuration: ENABLE_MOCK_WHATSAPP =", parsed.data.ENABLE_MOCK_WHATSAPP);
+
 module.exports = {
   env: parsed.data,
 };

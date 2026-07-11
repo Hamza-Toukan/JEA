@@ -59,7 +59,9 @@ export const useAuthStore = create(
         if (error) {
           console.error("[auth] rehydrate failed", error);
         }
-        useAuthStore.getState().setHydrated(true);
+        if (state) {
+          state.setHydrated(true);
+        }
       },
     }
   )

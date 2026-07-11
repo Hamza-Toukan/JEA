@@ -1,9 +1,9 @@
 import { ROUTES } from "@/constants/routes";
 import { DashboardPage } from "@/features/dashboard";
-import { InboxPage } from "@/features/inbox";
+import { InboxPage, TicketsPage } from "@/features/inbox";
 import { KnowledgeBasePage } from "@/features/knowledge-base";
 import { WorkflowsPage } from "@/features/workflows";
-import { AnalyticsPage } from "@/features/analytics";
+
 import { SettingsPage } from "@/features/settings";
 
 /**
@@ -30,23 +30,18 @@ export const APP_ROUTES = [
     title: "البريد الوارد",
   },
   {
+    path: ROUTES.TICKETS.slice(1),
+    element: TicketsPage,
+    protected: true,
+    title: "إدارة التذاكر",
+  },
+  {
     path: ROUTES.KNOWLEDGE_BASE.slice(1),
     element: KnowledgeBasePage,
     protected: true,
     title: "قاعدة المعرفة",
   },
-  {
-    path: ROUTES.WORKFLOWS.slice(1),
-    element: WorkflowsPage,
-    protected: true,
-    title: "مسارات العمل",
-  },
-  {
-    path: ROUTES.ANALYTICS.slice(1),
-    element: AnalyticsPage,
-    protected: true,
-    title: "التحليلات",
-  },
+
   {
     path: ROUTES.SETTINGS.slice(1),
     element: SettingsPage,

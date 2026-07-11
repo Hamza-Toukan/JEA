@@ -1,3 +1,5 @@
+import { useEffect } from "react";
+import { useAuthStore } from "@/store";
 import { useAuthBootstrap } from "../hooks/use-auth-bootstrap";
 
 /**
@@ -5,5 +7,11 @@ import { useAuthBootstrap } from "../hooks/use-auth-bootstrap";
  */
 export function AuthBootstrap({ children }) {
   useAuthBootstrap();
+
+  useEffect(() => {
+    // Explicitly mark authentication store as hydrated after mount
+    useAuthStore.getState().setHydrated(true);
+  }, []);
+
   return children;
 }

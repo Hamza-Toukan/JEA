@@ -18,6 +18,7 @@ function stripWhatsAppPrefix(from) {
 }
 
 async function handleTwilioWebhook(req, res) {
+  console.log("📞 Twilio Webhook reached! Body:", req.body);
   const messageSid = req.body.MessageSid;
   const fromRaw = req.body.From;
   const parsedInbound = parseTwilioInboundMessage(req.body);

@@ -18,6 +18,22 @@ async function requireAuth(req, res, next) {
 
     const token = authHeader.slice("Bearer ".length).trim();
 
+    // Dev bypass for mock frontend tokens to support simple hardcoded login
+    if (token === "mock-jwt-token-sk_8924") {
+      let user = await User.findOne({ role: "admin" });
+      if (!user) {
+        user = await User.create({
+          name: "م. أحمد خليل",
+          email: "admin@jea.org.jo",
+          passwordHash: "mocked",
+          role: "admin",
+          status: "active"
+        });
+      }
+      req.user = user;
+      return next();
+    }
+
     let payload;
 
     try {

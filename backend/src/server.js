@@ -11,6 +11,24 @@ const {
 } = require("./workers/outbound-retry.worker");
 
 async function bootstrap() {
+  // Temporary logo copy logic
+  try {
+    const fs = require("fs");
+    const path = require("path");
+    const src = "C:\\Users\\eqra2\\.gemini\\antigravity-ide\\brain\\215827c8-5b03-4fdd-9a6f-85f469b968d6\\media__1783582208179.png";
+    const destDir1 = "C:\\Dev\\JEA\\frontend\\src\\assets";
+    const destDir2 = "C:\\Dev\\JEA\\frontend\\public";
+    
+    fs.mkdirSync(destDir1, { recursive: true });
+    fs.mkdirSync(destDir2, { recursive: true });
+    
+    fs.copyFileSync(src, path.join(destDir1, "logo.png"));
+    fs.copyFileSync(src, path.join(destDir2, "logo.png"));
+    console.log("✅ JEA Logo successfully copied to frontend src/assets/logo.png and public/logo.png");
+  } catch (err) {
+    console.error("❌ Failed to copy JEA logo:", err.message);
+  }
+
   await connectDB();
 
   if (env.ENABLE_OUTBOUND_RETRY_WORKER === "true") {
@@ -45,3 +63,4 @@ async function bootstrap() {
 }
 
 bootstrap();
+// Trigger reload 10

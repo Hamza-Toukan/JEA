@@ -1,36 +1,23 @@
 import { NavLink } from "react-router-dom";
-import { HelpCircle, Headphones } from "lucide-react";
+
 import { cn } from "@/lib/cn";
 import { MAIN_NAV_ITEMS } from "@/constants/navigation";
 import { Button } from "@/components/ui/Button";
 import { useUiStore } from "@/store";
 
+const logoImg = "/logo.png";
+
 function JeaLogoMark() {
   return (
     <div
-      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white/10 ring-1 ring-white/20"
+      className="relative h-12 w-12 shrink-0 rounded-lg bg-white overflow-hidden p-1 ring-1 ring-white/20"
       aria-hidden
     >
-      <svg viewBox="0 0 40 40" className="h-7 w-7">
-        <circle
-          cx="20"
-          cy="20"
-          r="18"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.5"
-          className="text-white/90"
-        />
-        <path
-          d="M12 26 L20 12 L28 26 Z"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.8"
-          strokeLinejoin="round"
-          className="text-[var(--color-accent-subtle)]"
-        />
-        <circle cx="20" cy="22" r="3" fill="currentColor" className="text-white/80" />
-      </svg>
+      <img 
+        src={logoImg} 
+        alt="JEA Logo" 
+        className="absolute top-0 left-0 h-[175%] w-full object-cover object-top" 
+      />
     </div>
   );
 }
@@ -109,25 +96,7 @@ function SidebarPanel({ collapsed, className, onNavigate }) {
         <NavItems collapsed={collapsed} onNavigate={onNavigate} />
       </nav>
 
-      {!collapsed && (
-        <div className="space-y-3 border-t border-white/10 px-4 py-4">
-          <a
-            href="#help"
-            className="flex items-center gap-2 rounded-lg px-2 py-2 text-xs text-white/60 transition-colors hover:bg-white/8 hover:text-white/90 ui-focus-ring"
-          >
-            <HelpCircle className="h-4 w-4" aria-hidden />
-            المساعدة
-          </a>
-          <Button
-            variant="accent"
-            size="md"
-            className="w-full justify-center border-accent/50 bg-accent/90 hover:bg-accent"
-            icon={Headphones}
-          >
-            تواصل مع الدعم
-          </Button>
-        </div>
-      )}
+
     </aside>
   );
 }

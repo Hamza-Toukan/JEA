@@ -2,7 +2,7 @@ import {
   MessageSquare,
   Headphones,
   Sparkles,
-  AlertTriangle,
+  Heart,
   Circle,
 } from "lucide-react";
 import { PageContainer, SectionHeader } from "@/components/layout";
@@ -70,13 +70,13 @@ export function DashboardPage() {
           icon={Sparkles}
         />
         <StatCard
-          label="أخطاء التسليم"
-          value="0.8%"
-          change="-2% مقارنة بالأمس"
+          label="رضا الأعضاء"
+          value="94.8%"
+          change="+1.5% مقارنة بالأسبوع الماضي"
           changeType="up"
-          icon={AlertTriangle}
-          iconBg="bg-jea-bg"
-          iconColor="text-jea-text-muted"
+          icon={Heart}
+          iconBg="bg-accent-muted"
+          iconColor="text-primary"
         />
       </div>
 
@@ -130,24 +130,6 @@ export function DashboardPage() {
         </div>
 
         <div className="space-y-6 lg:col-span-2">
-          <Card>
-            <CardHeader
-              title="اتجاهات دقة الذكاء الاصطناعي"
-              description="متوسط الثقة في الردود خلال الأسبوع"
-            />
-            <CardBody>
-              <div className="jea-gradient-accent flex h-48 items-end justify-around gap-2 rounded-lg border border-jea-border-soft p-4">
-                {[72, 78, 85, 88, 91, 89, 94].map((h, i) => (
-                  <div key={i} className="flex flex-1 flex-col items-center gap-1">
-                    <div
-                      className="w-full max-w-[32px] rounded-t-md bg-jea-cyan/70"
-                      style={{ height: `${h}%` }}
-                    />
-                  </div>
-                ))}
-              </div>
-            </CardBody>
-          </Card>
 
           <Card>
             <CardHeader title="حجم المحادثات حسب الخدمة" />

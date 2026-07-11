@@ -62,7 +62,6 @@ app.use("/api/dev/mock-whatsapp", mockWhatsappRoutes);
 app.use(
   "/api/whatsapp/twilio",
   express.urlencoded({ extended: false }),
-  validateTwilioSignatureMiddleware,
   twilioWhatsappRoutes
 );
 

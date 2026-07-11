@@ -1,9 +1,8 @@
 import {
   LayoutDashboard,
   Inbox,
+  Ticket,
   BookOpen,
-  GitBranch,
-  BarChart3,
   Settings,
 } from "lucide-react";
 import { ROUTES } from "./routes";
@@ -25,23 +24,18 @@ export const MAIN_NAV_ITEMS = [
     icon: Inbox,
   },
   {
+    id: "tickets",
+    label: "التذاكر",
+    path: ROUTES.TICKETS,
+    icon: Ticket,
+  },
+  {
     id: "knowledge",
     label: "قاعدة المعرفة",
     path: ROUTES.KNOWLEDGE_BASE,
     icon: BookOpen,
   },
-  {
-    id: "workflows",
-    label: "مسارات عمل الذكاء الاصطناعي",
-    path: ROUTES.WORKFLOWS,
-    icon: GitBranch,
-  },
-  {
-    id: "analytics",
-    label: "التحليلات",
-    path: ROUTES.ANALYTICS,
-    icon: BarChart3,
-  },
+
   {
     id: "settings",
     label: "الإعدادات",

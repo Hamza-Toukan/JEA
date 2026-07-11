@@ -4,12 +4,17 @@ import { DEFAULT_ROUTE } from "@/constants";
 import { AppShell } from "@/layouts/AppShell";
 import { ProtectedRoute } from "./ProtectedRoute";
 import { APP_ROUTES } from "./routes.config";
+import { LoginPage } from "@/features/auth";
 
 const AUTH_GUARD_ENABLED = APP_CONFIG.authGuardEnabled;
 
 export function AppRoutes() {
   return (
     <Routes>
+      {/* Standalone full-screen login page */}
+      <Route path="login" element={<LoginPage />} />
+
+      {/* Main app navigation inside JEA AppShell */}
       <Route element={<AppShell />}>
         <Route index element={<Navigate to={DEFAULT_ROUTE} replace />} />
 
@@ -25,6 +30,9 @@ export function AppRoutes() {
           />
         ))}
       </Route>
+
+      {/* Wildcard fallback redirects to dashboard */}
+      <Route path="*" element={<Navigate to={DEFAULT_ROUTE} replace />} />
     </Routes>
   );
 }

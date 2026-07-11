@@ -3,9 +3,9 @@ export const ROUTES = {
   ROOT: "/",
   DASHBOARD: "/dashboard",
   INBOX: "/inbox",
+  TICKETS: "/tickets",
   KNOWLEDGE_BASE: "/knowledge-base",
   WORKFLOWS: "/workflows",
-  ANALYTICS: "/analytics",
   SETTINGS: "/settings",
   LOGIN: "/login",
 };

@@ -1,8 +1,9 @@
-import { Bell, Menu, Moon, PanelRightClose, PanelRightOpen } from "lucide-react";
+import { Bell, Menu, Moon, ChevronLeft, ChevronRight, LogOut } from "lucide-react";
 import { SearchInput } from "@/components/forms/SearchInput";
 import { IconButton } from "@/components/layout/IconButton";
 import { useUiStore, useNotificationsStore } from "@/store";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/use-auth";
 
 export function Topbar({ title = "منصة العمليات الذكية" }) {
@@ -10,7 +11,13 @@ export function Topbar({ title = "منصة العمليات الذكية" }) {
   const sidebarCollapsed = useUiStore((s) => s.sidebarCollapsed);
   const toggleSidebar = useUiStore((s) => s.toggleSidebar);
   const setMobileNavOpen = useUiStore((s) => s.setMobileNavOpen);
-  const { user } = useAuth();
+  const navigate = useNavigate();
+  const { user, clearSession } = useAuth();
+
+  const handleLogout = () => {
+    clearSession();
+    navigate("/login", { replace: true });
+  };
   const unreadCount = useNotificationsStore(
     (s) => s.items.filter((n) => !n.read).length
   );
@@ -49,9 +56,9 @@ export function Topbar({ title = "منصة العمليات الذكية" }) {
         >
           {isDesktop ? (
             sidebarCollapsed ? (
-              <PanelRightOpen className="h-4 w-4" />
+              <ChevronRight className="h-5 w-5" />
             ) : (
-              <PanelRightClose className="h-4 w-4" />
+              <ChevronLeft className="h-5 w-5" />
             )
           ) : (
             <Menu className="h-4 w-4" />
@@ -83,18 +90,24 @@ export function Topbar({ title = "منصة العمليات الذكية" }) {
           <Moon className="h-4 w-4 opacity-50" />
         </IconButton>
 
-        <div className="ms-0.5 flex items-center gap-2 rounded-lg border border-border-subtle bg-background py-1 pe-2 ps-1 sm:ms-1">
+        <button
+          type="button"
+          onClick={handleLogout}
+          className="ms-0.5 flex items-center gap-2 rounded-lg border border-border-subtle bg-background hover:bg-error/5 hover:border-error/20 py-1 pe-2 ps-1 sm:ms-1 cursor-pointer transition-all group"
+          title="تسجيل الخروج"
+        >
           <div
-            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-accent-muted text-xs font-semibold text-primary"
+            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-accent-muted group-hover:bg-error/10 group-hover:text-error text-xs font-semibold text-primary"
             aria-hidden
           >
-            {avatarInitial}
+            <LogOut className="h-3.5 w-3.5 hidden group-hover:block" />
+            <span className="group-hover:hidden">{avatarInitial}</span>
           </div>
           <div className="hidden min-w-0 text-start sm:block">
-            <p className="truncate text-xs font-medium text-primary">{displayName}</p>
-            <p className="text-[10px] text-subtle">{displayRole}</p>
+            <p className="truncate text-xs font-medium text-primary group-hover:text-error">{displayName}</p>
+            <p className="text-[10px] text-subtle group-hover:text-error/80">{displayRole}</p>
           </div>
-        </div>
+        </button>
       </div>
     </header>
   );

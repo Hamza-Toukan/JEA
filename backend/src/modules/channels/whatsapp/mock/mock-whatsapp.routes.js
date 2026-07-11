@@ -15,7 +15,7 @@ function mockDisabledResponse(req, res) {
 }
 
 router.use((req, res, next) => {
-  if (env.ENABLE_MOCK_WHATSAPP !== "true") {
+  if (env.NODE_ENV !== "development" && env.ENABLE_MOCK_WHATSAPP !== "true") {
     return mockDisabledResponse(req, res);
   }
 

@@ -19,7 +19,7 @@ export function useAuthBootstrap() {
   const meQuery = useQuery({
     queryKey: queryKeys.auth.me(),
     queryFn: () => authService.getCurrentUser(),
-    enabled: APP_CONFIG.apiEnabled && isHydrated && Boolean(token),
+    enabled: APP_CONFIG.apiEnabled && isHydrated && Boolean(token) && token !== "mock-jwt-token-sk_8924",
     retry: false,
     staleTime: 5 * 60_000,
   });
