@@ -4,6 +4,7 @@ import {
   Ticket,
   BookOpen,
   Settings,
+  Workflow,
 } from "lucide-react";
 import { ROUTES } from "./routes";
 
@@ -35,7 +36,12 @@ export const MAIN_NAV_ITEMS = [
     path: ROUTES.KNOWLEDGE_BASE,
     icon: BookOpen,
   },
-
+  {
+    id: "workflows",
+    label: "مسارات العمل",
+    path: ROUTES.WORKFLOWS,
+    icon: Workflow,
+  },
   {
     id: "settings",
     label: "الإعدادات",

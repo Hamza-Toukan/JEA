@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   CheckCircle2,
   Paperclip,
@@ -21,6 +22,8 @@ import { ProgressBar } from "@/components/ui/ProgressBar";
 import { Modal } from "@/components/ui/Modal";
 import { CONVERSATIONS } from "../data/mock";
 import { useInboxConversations } from "../hooks/use-inbox-conversations";
+import { useConversationMessages } from "../hooks/use-conversation-messages";
+import { conversationsService } from "@/services/conversations";
 import { APP_CONFIG } from "@/config/app";
 
 const INBOX_TABS = [
@@ -41,6 +44,35 @@ export function InboxPage() {
   const [inboxFilter, setInboxFilter] = useState("all");
   const [typedMessage, setTypedMessage] = useState("");
   const [showProfile, setShowProfile] = useState(false);
+
+  const queryClient = useQueryClient();
+
+  const { data: messagesData } = useConversationMessages(selected?.id, {
+    enabled: APP_CONFIG.apiEnabled && !!selected
+  });
+
+  const selectedMessages = APP_CONFIG.apiEnabled ? (messagesData?.items || []) : (selected?.messages || []);
+
+  const closeMutation = useMutation({
+    mutationFn: (id) => conversationsService.updateConversationStatus(id, "CLOSED"),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["conversations"] });
+      setSelected(null);
+    }
+  });
+
+  const handoverMutation = useMutation({
+    mutationFn: (id) => conversationsService.updateConversationHandover(id, true),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["conversations"] })
+  });
+
+  const sendMutation = useMutation({
+    mutationFn: ({ to, text }) => conversationsService.sendWhatsAppMessage(to, text),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["conversations"] });
+      setTypedMessage("");
+    }
+  });
 
   // Broadcast Modal State
   const [isBroadcastOpen, setIsBroadcastOpen] = useState(false);
@@ -99,29 +131,33 @@ export function InboxPage() {
     if (e) e.preventDefault();
     if (!typedMessage.trim() || !selected) return;
 
-    const newMsg = {
-      id: Date.now(),
-      role: "ai",
-      text: typedMessage,
-      time: new Date().toLocaleTimeString("ar-JO", { hour: "2-digit", minute: "2-digit" }),
-    };
+    if (APP_CONFIG.apiEnabled && selected.phone) {
+      sendMutation.mutate({ to: selected.phone, text: typedMessage });
+    } else {
+      const newMsg = {
+        id: Date.now(),
+        role: "ai",
+        text: typedMessage,
+        time: new Date().toLocaleTimeString("ar-JO", { hour: "2-digit", minute: "2-digit" }),
+      };
 
-    const updatedConversations = conversations.map((c) => {
-      if (c.id === selected.id) {
-        const newConversationsObj = {
-          ...c,
-          preview: typedMessage,
-          unread: false,
-          messages: [...c.messages, newMsg],
-        };
-        setSelected(newConversationsObj);
-        return newConversationsObj;
-      }
-      return c;
-    });
+      const updatedConversations = conversations.map((c) => {
+        if (c.id === selected.id) {
+          const newConversationsObj = {
+            ...c,
+            preview: typedMessage,
+            unread: false,
+            messages: [...c.messages, newMsg],
+          };
+          setSelected(newConversationsObj);
+          return newConversationsObj;
+        }
+        return c;
+      });
 
-    setConversations(updatedConversations);
-    setTypedMessage("");
+      setConversations(updatedConversations);
+      setTypedMessage("");
+    }
   };
 
   const handleQuickReply = (text) => {
@@ -309,20 +345,35 @@ export function InboxPage() {
                 <Button
                   variant="ghost"
                   size="sm"
+                  onClick={() => handoverMutation.mutate(selected.id)}
+                  disabled={handoverMutation.isPending}
+                  className="text-jea-navy hover:text-primary hover:bg-background h-8 px-2 text-xs"
+                  title="تحويل المحادثة لموظف"
+                >
+                  {handoverMutation.isPending ? "جاري التحويل..." : "تحويل لموظف"}
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
                   onClick={() => {
-                    setSelected(null);
-                    setShowProfile(false);
+                    if (APP_CONFIG.apiEnabled) {
+                      closeMutation.mutate(selected.id);
+                    } else {
+                      setSelected(null);
+                      setShowProfile(false);
+                    }
                   }}
-                  className="text-muted hover:text-primary hover:bg-background h-8 px-2 text-xs"
+                  disabled={closeMutation.isPending}
+                  className="text-muted hover:text-jea-danger hover:bg-jea-danger-bg h-8 px-2 text-xs"
                   title="إغلاق المحادثة والعودة"
                 >
-                  إغلاق المحادثة
+                  {closeMutation.isPending ? "جاري الإغلاق..." : "إغلاق المحادثة"}
                 </Button>
               </div>
             </div>
 
             <div className="flex-1 space-y-4 overflow-y-auto bg-background/10 p-5">
-              {selected.messages.map((msg) => {
+              {selectedMessages.map((msg) => {
                 const isUser = msg.role === "user";
                 const isAi = msg.role === "ai";
 
@@ -379,8 +430,8 @@ export function InboxPage() {
                   value={typedMessage}
                   onChange={(e) => setTypedMessage(e.target.value)}
                 />
-                <Button type="submit" icon={Send} iconPosition="end">
-                  إرسال
+                <Button type="submit" icon={Send} iconPosition="end" disabled={sendMutation.isPending}>
+                  {sendMutation.isPending ? "..." : "إرسال"}
                 </Button>
               </form>
             </div>

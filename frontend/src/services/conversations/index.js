@@ -1,9 +1,8 @@
 export {
   conversationsService,
   listConversations,
-  getConversation,
   listMessages,
-  updateConversationMode,
+  updateConversationHandover,
   updateConversationStatus,
-  addInternalNote,
+  sendWhatsAppMessage,
 } from "./conversations.service";

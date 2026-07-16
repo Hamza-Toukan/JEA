@@ -12,12 +12,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Alert } from "@/components/feedback";
 import { Button } from "@/components/ui/Button";
 import { ProgressBar } from "@/components/ui/ProgressBar";
-
-const TIMELINE = [
-  { type: "ai", title: "رد المساعد الذكي", desc: "تم الرد على استفسار حول شهادة عضوية", time: "10:45", badge: null },
-  { type: "verify", title: "التحقق من العضوية", desc: "تم التحقق من العضوية رقم 100245", time: "10:42", badge: "verified" },
-  { type: "escalate", title: "تصعيد لموظف بشري", desc: "تصعيد بسبب فشل بوابة الدفع", time: "10:40", badge: null },
-];
+import { useDashboardStats } from "../hooks/use-dashboard-stats";
 
 const SERVICE_VOLUME = [
   { label: "شكاوى", value: 18, color: "bg-red-400" },
@@ -27,6 +22,16 @@ const SERVICE_VOLUME = [
 ];
 
 export function DashboardPage() {
+  const { data: apiResponse, isLoading } = useDashboardStats();
+  const stats = apiResponse?.data || {
+    sessions: { open: 0, handover: 0, closed: 0, total: 0 },
+    tickets: { open: 0, resolved: 0, total: 0 },
+    customers: { total: 0 },
+    messages: { total: 0, recent: [] },
+  };
+
+  const recentMessages = stats.messages.recent || [];
+
   return (
     <PageContainer>
       <SectionHeader
@@ -34,103 +39,85 @@ export function DashboardPage() {
         description="مراقبة أداء المساعد الرقمي وطلبات الأعضاء في الوقت الفعلي."
         actions={
           <>
-            <Badge variant="success" className="gap-1.5 px-2.5 py-1">
-              <Circle className="h-2 w-2 fill-current" />
-              متصل
+            <Badge variant={isLoading ? "neutral" : "success"} className="gap-1.5 px-2.5 py-1">
+              <Circle className={isLoading ? "h-2 w-2 fill-current animate-pulse" : "h-2 w-2 fill-current"} />
+              {isLoading ? "جاري التحديث..." : "متصل بالخادم"}
             </Badge>
-            <Button variant="secondary" size="sm">
-              آخر 24 ساعة
-            </Button>
           </>
         }
       />
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard
-          label="المحادثات النشطة"
-          value="1,248"
-          change="+12% مقارنة بالأمس"
-          changeType="up"
+          label="المحادثات المفتوحة"
+          value={stats.sessions.open.toString()}
+          change={`من أصل ${stats.sessions.total} محادثة`}
+          changeType="neutral"
           icon={MessageSquare}
         />
         <StatCard
-          label="بانتظار موظف"
-          value="42"
-          change="+5% فوق المعدل"
-          changeType="down"
+          label="بانتظار موظف (Handover)"
+          value={stats.sessions.handover.toString()}
+          change="تحتاج للتدخل البشري"
+          changeType={stats.sessions.handover > 0 ? "down" : "neutral"}
           icon={Headphones}
-          iconBg="bg-jea-danger-bg"
-          iconColor="text-jea-danger"
+          iconBg={stats.sessions.handover > 0 ? "bg-jea-danger-bg" : "bg-accent-muted"}
+          iconColor={stats.sessions.handover > 0 ? "text-jea-danger" : "text-primary"}
         />
         <StatCard
-          label="معدل الحل الآلي"
-          value="87.4%"
-          change="مستقر"
+          label="إجمالي العملاء المتفاعلين"
+          value={stats.customers.total.toString()}
+          change="رسائل واردة: "
           changeType="neutral"
-          icon={Sparkles}
-        />
-        <StatCard
-          label="رضا الأعضاء"
-          value="94.8%"
-          change="+1.5% مقارنة بالأسبوع الماضي"
-          changeType="up"
           icon={Heart}
           iconBg="bg-accent-muted"
           iconColor="text-primary"
+        />
+        <StatCard
+          label="التذاكر المحلولة"
+          value={stats.tickets.resolved.toString()}
+          change={`من أصل ${stats.tickets.total} تذكرة`}
+          changeType="up"
+          icon={Sparkles}
         />
       </div>
 
       <div className="mt-6 grid gap-6 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-1">
           <Card>
-            <CardHeader title="تنبيهات نشطة" action={<Badge variant="danger">3</Badge>} />
-            <CardBody className="space-y-3 p-4">
-              <Alert variant="warning" title="مستوى ثقة منخفض (42%)">
-                محادثة T-8912 — استفسار تقني معقد
-              </Alert>
-              <Alert variant="danger" title="زمن استجابة طويل">
-                محادثة T-8908 — أكثر من 10 دقائق
-              </Alert>
-            </CardBody>
-          </Card>
-
-          <Card>
-            <CardHeader title="سجل العمليات المباشر" />
+            <CardHeader title="سجل العمليات المباشر (Recent Messages)" />
             <CardBody className="space-y-4 p-4">
-              {TIMELINE.map((item) => (
-                <div key={item.title} className="flex gap-3">
-                  <div
-                    className={`mt-1 h-2 w-2 shrink-0 rounded-full ${
-                      item.type === "ai"
-                        ? "bg-jea-cyan"
-                        : item.type === "verify"
-                          ? "bg-jea-success"
-                          : "bg-jea-danger"
-                    }`}
-                  />
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center justify-between gap-2">
-                      <p className="text-xs font-medium text-jea-navy">{item.title}</p>
-                      <span className="text-[10px] text-jea-text-subtle">{item.time}</span>
+              {recentMessages.length === 0 ? (
+                <div className="text-center text-xs text-muted py-4">لا توجد رسائل حديثة.</div>
+              ) : (
+                recentMessages.map((msg, idx) => (
+                  <div key={msg._id || idx} className="flex gap-3">
+                    <div
+                      className={`mt-1 h-2 w-2 shrink-0 rounded-full ${
+                        msg.sender === "bot"
+                          ? "bg-jea-cyan"
+                          : "bg-jea-success"
+                      }`}
+                    />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="text-xs font-medium text-jea-navy">
+                          {msg.sender === "bot" ? "الرد الآلي" : "العميل"}
+                        </p>
+                        <span className="text-[10px] text-jea-text-subtle">
+                          {new Date(msg.createdAt).toLocaleTimeString("ar-JO", { hour: "2-digit", minute: "2-digit" })}
+                        </span>
+                      </div>
+                      <p className="mt-0.5 text-[11px] text-jea-text-muted">{msg.body}</p>
                     </div>
-                    <p className="mt-0.5 text-[11px] text-jea-text-muted">{item.desc}</p>
-                    {item.badge === "verified" && (
-                      <Badge variant="success" className="mt-1">
-                        تم التحقق
-                      </Badge>
-                    )}
                   </div>
-                </div>
-              ))}
-              <Button variant="ghost" size="sm" className="w-full">
-                عرض السجل الكامل
-              </Button>
+                ))
+              )}
             </CardBody>
           </Card>
         </div>
 
         <div className="space-y-6 lg:col-span-2">
-
           <Card>
             <CardHeader title="حجم المحادثات حسب الخدمة" />
             <CardBody>
@@ -153,17 +140,21 @@ export function DashboardPage() {
             <CardBody className="grid gap-4 sm:grid-cols-2">
               <div>
                 <div className="mb-1 flex justify-between text-xs">
-                  <span className="text-jea-text-muted">دقة الاستخراج</span>
-                  <span className="font-medium text-jea-navy">92%</span>
+                  <span className="text-jea-text-muted">معدل الإغلاق التلقائي للمحادثات</span>
+                  <span className="font-medium text-jea-navy">
+                    {stats.sessions.total > 0 ? Math.round((stats.sessions.closed / stats.sessions.total) * 100) : 0}%
+                  </span>
                 </div>
-                <ProgressBar value={92} />
+                <ProgressBar value={stats.sessions.total > 0 ? (stats.sessions.closed / stats.sessions.total) * 100 : 0} />
               </div>
               <div>
                 <div className="mb-1 flex justify-between text-xs">
-                  <span className="text-jea-text-muted">ملاءمة السياق</span>
-                  <span className="font-medium text-jea-navy">88%</span>
+                  <span className="text-jea-text-muted">معدل حل التذاكر المفتوحة</span>
+                  <span className="font-medium text-jea-navy">
+                    {stats.tickets.total > 0 ? Math.round((stats.tickets.resolved / stats.tickets.total) * 100) : 0}%
+                  </span>
                 </div>
-                <ProgressBar value={88} />
+                <ProgressBar value={stats.tickets.total > 0 ? (stats.tickets.resolved / stats.tickets.total) * 100 : 0} />
               </div>
             </CardBody>
           </Card>

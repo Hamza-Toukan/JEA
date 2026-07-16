@@ -1,1 +1,1 @@
-export { authService, login, getCurrentUser, refreshSession } from "./auth.service";
+export { authService, login, verifyOtp, refreshSession } from "./auth.service";

@@ -1,4 +1,4 @@
-import { setAuthTokenGetter, setUnauthorizedHandler } from "@/services/api/interceptors";
+import { setAuthTokenGetter, setUnauthorizedHandler, addRequestInterceptor } from "@/services/api/interceptors";
 import { useAuthStore } from "@/store/auth.store";
 import { useNotificationsStore } from "@/store/notifications.store";
 
@@ -7,6 +7,14 @@ import { useNotificationsStore } from "@/store/notifications.store";
  */
 export function setupApiLayer() {
   setAuthTokenGetter(() => useAuthStore.getState().token);
+
+  addRequestInterceptor((config) => {
+    config.headers = {
+      ...config.headers,
+      "ngrok-skip-browser-warning": "69420",
+    };
+    return config;
+  });
 
   setUnauthorizedHandler(() => {
     const { clearSession, isAuthenticated } = useAuthStore.getState();

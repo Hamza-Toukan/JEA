@@ -11,14 +11,9 @@ import { normalizeMessageList } from "../lib/normalize";
  */
 export function useConversationMessages(conversationId, options = {}) {
   return useQuery({
-    queryKey: queryKeys.conversations.messages(conversationId, {
-      page: options.page ?? 1,
-    }),
+    queryKey: queryKeys.conversations.messages(conversationId),
     queryFn: async () => {
-      const data = await conversationsService.listMessages(conversationId, {
-        page: options.page ?? 1,
-        limit: options.limit ?? 50,
-      });
+      const data = await conversationsService.listMessages(conversationId);
       return normalizeMessageList(data);
     },
     enabled:

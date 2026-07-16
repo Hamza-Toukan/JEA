@@ -1,46 +1,64 @@
 import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Shield, Lock, Mail, Eye, EyeOff, AlertCircle } from "lucide-react";
+import { Shield, Lock, User, Eye, EyeOff, AlertCircle, KeyRound } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
+import { authService } from "@/services/auth";
 
 export function LoginPage() {
   const { setSession } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
-  const [email, setEmail] = useState("admin@jea.org.jo");
-  const [password, setPassword] = useState("admin123");
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  
+  const [showOtp, setShowOtp] = useState(false);
+  const [otp, setOtp] = useState("");
+
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
   const from = location.state?.from?.pathname || "/dashboard";
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
     setError("");
     setIsLoading(true);
 
-    // Simulate network delay
-    setTimeout(() => {
-      // Simple hardcoded check
-      const trimmedEmail = email.trim().toLowerCase();
-      if (trimmedEmail === "admin@jea.org.jo" && password === "admin123") {
-        setSession("mock-jwt-token-sk_8924", {
-          id: "usr-1",
-          name: "م. أحمد خليل",
-          email: "admin@jea.org.jo",
-          roles: ["admin"],
-        });
-        setIsLoading(false);
-        navigate(from, { replace: true });
+    try {
+      if (!showOtp) {
+        // Step 1: Request Login
+        const res = await authService.login({ username, password });
+        if (res?.requireOtp) {
+          setShowOtp(true);
+        } else if (res?.success) {
+          // In case API returns token directly without OTP
+          if (res.data?.token && res.data?.user) {
+            setSession(res.data.token, res.data.user);
+            navigate(from, { replace: true });
+          } else {
+            setShowOtp(true); // Fallback to OTP if unclear
+          }
+        }
       } else {
-        setIsLoading(false);
-        setError("البريد الإلكتروني أو كلمة المرور غير صحيحة. (استخدم: admin@jea.org.jo / admin123)");
+        // Step 2: Verify OTP
+        const res = await authService.verifyOtp(username, otp);
+        if (res?.success && res.data?.token) {
+          setSession(res.data.token, res.data.user);
+          navigate(from, { replace: true });
+        } else {
+          setError(res?.message || "رمز التحقق غير صحيح.");
+        }
       }
-    }, 1000);
+    } catch (err) {
+      console.error(err);
+      setError(err?.data?.message || err?.message || "حدث خطأ أثناء تسجيل الدخول. يرجى المحاولة مرة أخرى.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -71,64 +89,107 @@ export function LoginPage() {
             </div>
           )}
 
-          <div>
-            <label className="mb-1 block text-xs font-semibold text-primary">البريد الإلكتروني</label>
-            <div className="relative">
-              <Mail className="absolute start-3 top-2.5 h-4 w-4 text-muted" />
-              <Input
-                type="email"
-                placeholder="example@jea.org.jo"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="ps-10 text-xs text-start h-9 w-full"
-                dir="ltr"
-                required
-              />
-            </div>
-          </div>
+          {!showOtp ? (
+            <>
+              <div>
+                <label className="mb-1 block text-xs font-semibold text-primary">اسم المستخدم</label>
+                <div className="relative">
+                  <User className="absolute start-3 top-2.5 h-4 w-4 text-muted" />
+                  <Input
+                    type="text"
+                    placeholder="admin"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    className="ps-10 text-xs text-start h-9 w-full"
+                    dir="ltr"
+                    required
+                  />
+                </div>
+              </div>
 
-          <div>
-            <label className="mb-1 block text-xs font-semibold text-primary">كلمة المرور</label>
-            <div className="relative">
-              <Lock className="absolute start-3 top-2.5 h-4 w-4 text-muted" />
-              <Input
-                type={showPassword ? "text" : "password"}
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="ps-10 pe-10 text-xs text-start h-9 w-full"
-                dir="ltr"
-                required
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute end-3 top-2.5 text-muted hover:text-primary"
-              >
-                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              </button>
-            </div>
-          </div>
+              <div>
+                <label className="mb-1 block text-xs font-semibold text-primary">كلمة المرور</label>
+                <div className="relative">
+                  <Lock className="absolute start-3 top-2.5 h-4 w-4 text-muted" />
+                  <Input
+                    type={showPassword ? "text" : "password"}
+                    placeholder="••••••••"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="ps-10 pe-10 text-xs text-start h-9 w-full"
+                    dir="ltr"
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute end-3 top-2.5 text-muted hover:text-primary"
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+              </div>
 
-          <div className="flex items-center justify-between text-[11px] pt-1">
-            <label className="flex items-center gap-1.5 cursor-pointer text-muted hover:text-primary">
-              <input 
-                type="checkbox" 
-                defaultChecked 
-                className="h-3.5 w-3.5 rounded border-border-subtle text-primary focus:ring-primary/20 cursor-pointer" 
-              />
-              <span>تذكرني على هذا الجهاز</span>
-            </label>
-            <a href="#forgot" className="text-primary font-medium hover:underline">نسيت كلمة المرور؟</a>
-          </div>
+              <div className="flex items-center justify-between text-[11px] pt-1">
+                <label className="flex items-center gap-1.5 cursor-pointer text-muted hover:text-primary">
+                  <input 
+                    type="checkbox" 
+                    defaultChecked 
+                    className="h-3.5 w-3.5 rounded border-border-subtle text-primary focus:ring-primary/20 cursor-pointer" 
+                  />
+                  <span>تذكرني على هذا الجهاز</span>
+                </label>
+                <a href="#forgot" className="text-primary font-medium hover:underline">نسيت كلمة المرور؟</a>
+              </div>
+            </>
+          ) : (
+            <div>
+              <label className="mb-1 block text-xs font-semibold text-primary">رمز التحقق (OTP)</label>
+              <p className="text-[10px] text-muted mb-3">تم إرسال رمز التحقق إلى هاتفك/بريدك.</p>
+              <div className="relative">
+                <KeyRound className="absolute start-3 top-2.5 h-4 w-4 text-muted" />
+                <Input
+                  type="text"
+                  placeholder="123456"
+                  value={otp}
+                  onChange={(e) => setOtp(e.target.value)}
+                  className="ps-10 text-xs text-center h-9 w-full tracking-[0.5em] font-mono"
+                  dir="ltr"
+                  maxLength={6}
+                  required
+                />
+              </div>
+            </div>
+          )}
 
           <Button
             type="submit"
             className="w-full justify-center h-10 mt-6 text-sm font-semibold"
             disabled={isLoading}
           >
-            {isLoading ? "جاري تسجيل الدخول..." : "تسجيل الدخول"}
+            {isLoading 
+              ? "جاري التحقق..." 
+              : showOtp 
+                ? "تأكيد الدخول" 
+                : "تسجيل الدخول"
+            }
           </Button>
+
+          {showOtp && (
+            <div className="text-center mt-4">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowOtp(false);
+                  setOtp("");
+                  setError("");
+                }}
+                className="text-xs text-muted hover:text-primary transition-colors"
+              >
+                العودة لتسجيل الدخول
+              </button>
+            </div>
+          )}
         </form>
       </div>
     </div>

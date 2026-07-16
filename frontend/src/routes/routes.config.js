@@ -41,7 +41,12 @@ export const APP_ROUTES = [
     protected: true,
     title: "قاعدة المعرفة",
   },
-
+  {
+    path: ROUTES.WORKFLOWS.slice(1),
+    element: WorkflowsPage,
+    protected: true,
+    title: "مسارات العمل",
+  },
   {
     path: ROUTES.SETTINGS.slice(1),
     element: SettingsPage,

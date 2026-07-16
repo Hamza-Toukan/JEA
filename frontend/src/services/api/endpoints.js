@@ -4,24 +4,24 @@
 
 export const API_ENDPOINTS = {
   auth: {
-    login: "/api/auth/login",
-    me: "/api/auth/me",
-    refresh: "/api/auth/refresh",
+    login: "/api/admin/auth/login",
+    verifyOtp: "/api/admin/auth/verify-otp",
+    refresh: "/api/admin/auth/refresh",
   },
 
   conversations: {
-    list: "/api/conversations",
-    detail: (id) => `/api/conversations/${id}`,
-    messages: (id) => `/api/conversations/${id}/messages`,
-    mode: (id) => `/api/conversations/${id}/mode`,
-    status: (id) => `/api/conversations/${id}/status`,
-    ticketStatus: (id) => `/api/conversations/${id}/ticket-status`,
-    notes: (id) => `/api/conversations/${id}/notes`,
+    list: "/api/admin/sessions",
+    messages: (id) => `/api/admin/sessions/${id}/messages`,
+    mode: (id) => `/api/admin/sessions/${id}/handover`,
+    status: (id) => `/api/admin/sessions/${id}/status`,
   },
 
   analytics: {
-    overview: "/api/analytics/overview",
-    operations: "/api/analytics/operations",
+    overview: "/api/admin/dashboard",
+  },
+
+  whatsapp: {
+    send: "/api/whatsapp/send",
   },
 
   workflows: {

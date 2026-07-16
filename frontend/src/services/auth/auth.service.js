@@ -11,10 +11,16 @@ export function login(credentials) {
   });
 }
 
-export function getCurrentUser() {
-  return get(API_ENDPOINTS.auth.me);
+/**
+ * @param {string} username
+ * @param {string} otp
+ */
+export function verifyOtp(username, otp) {
+  return post(API_ENDPOINTS.auth.verifyOtp, { username, otp }, {
+    skipAuth: true,
+    skipUnauthorizedHandler: true,
+  });
 }
-
 /**
  * Placeholder for refresh-token rotation (future).
  * @param {string} refreshToken
@@ -28,6 +34,6 @@ export function refreshSession(refreshToken) {
 
 export const authService = {
   login,
-  getCurrentUser,
+  verifyOtp,
   refreshSession,
 };
