@@ -166,6 +166,15 @@ export function patch(path, body, options) {
 
 /**
  * @param {string} path
+ * @param {unknown} [body]
+ * @param {Omit<RequestConfig, 'url' | 'method' | 'body'>} [options]
+ */
+export function put(path, body, options) {
+  return request({ ...options, url: path, method: "PUT", body });
+}
+
+/**
+ * @param {string} path
  * @param {Omit<RequestConfig, 'url' | 'method'>} [options]
  */
 export function del(path, options) {

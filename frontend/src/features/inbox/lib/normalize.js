@@ -12,13 +12,13 @@ export function normalizeConversation(raw) {
   const item = /** @type {Record<string, unknown>} */ (raw);
 
   return {
-    id: String(item.id ?? item.conversationId ?? ""),
-    name: String(item.name ?? item.memberName ?? item.displayName ?? ""),
+    id: String(item.id ?? item.conversationId ?? item.session_id ?? ""),
+    name: String(item.name ?? item.memberName ?? item.displayName ?? item.session_id ?? ""),
     topic: String(item.topic ?? item.subject ?? item.title ?? ""),
     preview: String(item.preview ?? item.lastMessage ?? item.snippet ?? ""),
-    time: String(item.time ?? item.updatedAt ?? item.lastMessageAt ?? ""),
+    time: String(item.time ?? item.updatedAt ?? item.updated_at ?? item.created_at ?? item.lastMessageAt ?? ""),
     verified: Boolean(item.verified),
-    unread: Boolean(item.unread ?? item.hasUnread),
+    unread: Boolean(item.unread ?? item.hasUnread ?? item.is_handover),
     priority: Boolean(item.priority ?? item.isPriority),
     mode: item.mode ?? item.conversationMode ?? null,
     status: item.status ?? item.ticketStatus ?? null,
@@ -62,13 +62,18 @@ export function normalizeMessage(raw) {
 
   const item = /** @type {Record<string, unknown>} */ (raw);
 
+  const rawTime = String(item.time ?? item.createdAt ?? item.created_at ?? item.sentAt ?? "");
+  const timeStr = rawTime ? new Date(rawTime).toLocaleTimeString("ar-JO", { hour: "2-digit", minute: "2-digit" }) : "";
+  const fromStr = String(item.sender ?? item.role ?? item.from ?? "member");
+  const isAi = Boolean(item.isAi || item.fromAi || item.sender === "bot" || fromStr === "SERVER");
+
   return {
-    id: String(item.id ?? item.messageId ?? ""),
-    conversationId: String(item.conversationId ?? ""),
-    body: String(item.body ?? item.content ?? item.text ?? ""),
-    sender: String(item.sender ?? item.role ?? item.from ?? "member"),
-    time: String(item.time ?? item.createdAt ?? item.sentAt ?? ""),
-    isAi: Boolean(item.isAi ?? item.fromAi ?? item.sender === "bot"),
+    id: String(item.id ?? item.message_id ?? item.messageId ?? ""),
+    conversationId: String(item.conversationId ?? item.session_id ?? ""),
+    text: String(item.body ?? item.content ?? item.text ?? ""),
+    role: isAi ? "ai" : "user",
+    time: timeStr,
+    isAi,
     isSystem: Boolean(item.isSystem ?? item.type === "system"),
     raw: item,
   };

@@ -7,6 +7,13 @@ export const ROUTES = {
   KNOWLEDGE_BASE: "/knowledge-base",
   WORKFLOWS: "/workflows",
   SETTINGS: "/settings",
+  USERS: "/users",
+  RATINGS: "/ratings",
+  CAMPAIGNS: "/campaigns",
+  MESSAGES: "/messages",
+  SESSIONS_MGMT: "/sessions-mgmt",
+  CUSTOMERS: "/customers",
+  EMPLOYEES: "/employees",
   LOGIN: "/login",
 };
 

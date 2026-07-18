@@ -3,6 +3,11 @@ import { DashboardPage } from "@/features/dashboard";
 import { InboxPage, TicketsPage } from "@/features/inbox";
 import { KnowledgeBasePage } from "@/features/knowledge-base";
 import { WorkflowsPage } from "@/features/workflows";
+import { UsersPage } from "@/features/users";
+import { RatingsPage } from "@/features/ratings";
+import { CampaignsPage } from "@/features/campaigns";
+import { CustomersPage } from "@/features/customers";
+import { EmployeesPage } from "@/features/employees";
 
 import { SettingsPage } from "@/features/settings";
 
@@ -52,5 +57,35 @@ export const APP_ROUTES = [
     element: SettingsPage,
     protected: true,
     title: "الإعدادات",
+  },
+  {
+    path: ROUTES.USERS.slice(1),
+    element: UsersPage,
+    protected: true,
+    title: "المستخدمين",
+  },
+  {
+    path: ROUTES.RATINGS.slice(1),
+    element: RatingsPage,
+    protected: true,
+    title: "التقييمات",
+  },
+  {
+    path: ROUTES.CAMPAIGNS.slice(1),
+    element: CampaignsPage,
+    protected: true,
+    title: "الحملات",
+  },
+  {
+    path: ROUTES.CUSTOMERS.slice(1),
+    element: CustomersPage,
+    protected: true,
+    title: "العملاء",
+  },
+  {
+    path: ROUTES.EMPLOYEES.slice(1),
+    element: EmployeesPage,
+    protected: true,
+    title: "الموظفين",
   },
 ];

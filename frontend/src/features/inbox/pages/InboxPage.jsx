@@ -99,19 +99,26 @@ export function InboxPage() {
 
         return {
           id: apiConv.id,
-          name: apiConv.name || "عضو نقابة",
+          name: apiConv.name || apiConv.id || "عضو نقابة",
           topic: apiConv.topic || "استفسار عام",
           preview: apiConv.preview || "",
           time: apiConv.time ? new Date(apiConv.time).toLocaleTimeString("ar-JO", { hour: "2-digit", minute: "2-digit" }) : "",
           verified: apiConv.verified,
           unread: apiConv.unread,
-          phone: apiConv.raw?.customerPhone || "",
+          phone: apiConv.raw?.customerPhone || apiConv.id || "",
           memberId: apiConv.raw?.memberId || "غير محدد",
           joinYear: apiConv.raw?.joinYear || "2020",
           statusSubscription: apiConv.raw?.membershipStatus || "نشط",
           trustLevel: apiConv.raw?.trustLevel || 90,
-          messages: messages
+          messages: messages,
+          status: apiConv.status || "OPEN"
         };
+      });
+
+      apiConversations.sort((a, b) => {
+        if (a.status === "CLOSED" && b.status !== "CLOSED") return 1;
+        if (a.status !== "CLOSED" && b.status === "CLOSED") return -1;
+        return 0;
       });
 
       if (apiConversations.length > 0) {
@@ -313,9 +320,16 @@ export function InboxPage() {
                       </div>
                       <span className="shrink-0 text-[10px] text-subtle">{c.time}</span>
                     </div>
-                    <p className="truncate text-[11px] text-muted text-start mt-0.5">
-                      {c.preview}
-                    </p>
+                    <div className="flex items-center justify-between mt-0.5">
+                      <p className="truncate text-[11px] text-muted text-start">
+                        {c.preview}
+                      </p>
+                      {c.status === "CLOSED" && (
+                        <span className="shrink-0 rounded bg-red-50 px-1.5 py-0.5 text-[9px] font-medium text-red-600 dark:bg-red-500/10">
+                          مغلقة
+                        </span>
+                      )}
+                    </div>
                     {c.unread && (
                       <span className="absolute end-4 bottom-4 h-2 w-2 rounded-full bg-primary animate-pulse" />
                     )}

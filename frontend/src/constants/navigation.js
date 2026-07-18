@@ -5,6 +5,13 @@ import {
   BookOpen,
   Settings,
   Workflow,
+  Users,
+  UserCheck,
+  Briefcase,
+  Activity,
+  MessageSquare,
+  Megaphone,
+  Star,
 } from "lucide-react";
 import { ROUTES } from "./routes";
 
@@ -47,5 +54,35 @@ export const MAIN_NAV_ITEMS = [
     label: "الإعدادات",
     path: ROUTES.SETTINGS,
     icon: Settings,
+  },
+  {
+    id: "users",
+    label: "المستخدمين",
+    path: ROUTES.USERS,
+    icon: Users,
+  },
+  {
+    id: "customers",
+    label: "العملاء",
+    path: ROUTES.CUSTOMERS,
+    icon: UserCheck,
+  },
+  {
+    id: "employees",
+    label: "الموظفين",
+    path: ROUTES.EMPLOYEES,
+    icon: Briefcase,
+  },
+  {
+    id: "campaigns",
+    label: "الحملات",
+    path: ROUTES.CAMPAIGNS,
+    icon: Megaphone,
+  },
+  {
+    id: "ratings",
+    label: "التقييمات",
+    path: ROUTES.RATINGS,
+    icon: Star,
   },
 ];
