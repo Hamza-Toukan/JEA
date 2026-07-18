@@ -1,0 +1,3952 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+      "title": "JEA Demo Express API Documentation",
+      "version": "1.0.0",
+      "description": "Detailed API documentation for the JEA Demo Express Backend, exposing separate CRUD services."
+    },
+    "servers": [
+      {
+        "url": "http://localhost:3000",
+        "description": "Local Development Server"
+      }
+    ],
+    "paths": {
+      "/api/admin/auth/login": {
+        "post": {
+          "summary": "Admin Login (Step 1)",
+          "description": "Authenticate an administrator or agent credentials. If successful, requests OTP verification.",
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "username": {
+                      "type": "string",
+                      "example": "admin"
+                    },
+                    "password": {
+                      "type": "string",
+                      "example": "admin123"
+                    }
+                  },
+                  "required": [
+                    "username",
+                    "password"
+                  ]
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Credentials verified, OTP step required",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "success": {
+                        "type": "boolean",
+                        "example": true
+                      },
+                      "requireOtp": {
+                        "type": "boolean",
+                        "example": true,
+                        "description": "Indicates OTP check is needed."
+                      },
+                      "message": {
+                        "type": "string",
+                        "example": "Credentials valid. OTP required."
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/api/admin/auth/verify-otp": {
+        "post": {
+          "summary": "Verify OTP (Step 2)",
+          "description": "Verify the OTP verification code and issue the JWT session token.",
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "username": {
+                      "type": "string",
+                      "example": "admin"
+                    },
+                    "otp": {
+                      "type": "string",
+                      "example": "123456"
+                    }
+                  },
+                  "required": [
+                    "username",
+                    "otp"
+                  ]
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "OTP verified successfully. Session started.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "success": {
+                        "type": "boolean",
+                        "example": true
+                      },
+                      "data": {
+                        "type": "object",
+                        "properties": {
+                          "token": {
+                            "type": "string",
+                            "example": "eyJhbGciOi..."
+                          },
+                          "user": {
+                            "type": "object",
+                            "properties": {
+                              "user_id": {
+                                "type": "string",
+                                "example": "admin"
+                              },
+                              "name": {
+                                "type": "string",
+                                "example": "admin"
+                              },
+                              "user_type": {
+                                "type": "string",
+                                "example": "ADMIN"
+                              },
+                              "status": {
+                                "type": "string",
+                                "example": "ACTIVE"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/api/admin/dashboard": {
+        "get": {
+          "summary": "Get Dashboard Statistics",
+          "description": "Retrieve general count statistics and recent message logs for the admin dashboard.",
+          "security": [
+            {
+              "bearerAuth": []
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Success",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "success": {
+                        "type": "boolean",
+                        "example": true
+                      },
+                      "data": {
+                        "type": "object",
+                        "properties": {
+                          "sessions": {
+                            "type": "object",
+                            "properties": {
+                              "open": {
+                                "type": "integer",
+                                "example": 2
+                              },
+                              "closed": {
+                                "type": "integer",
+                                "example": 5
+                              },
+                              "handover": {
+                                "type": "integer",
+                                "example": 1
+                              },
+                              "total": {
+                                "type": "integer",
+                                "example": 7
+                              }
+                            }
+                          },
+                          "tickets": {
+                            "type": "object",
+                            "properties": {
+                              "open": {
+                                "type": "integer",
+                                "example": 1
+                              },
+                              "resolved": {
+                                "type": "integer",
+                                "example": 3
+                              },
+                              "total": {
+                                "type": "integer",
+                                "example": 4
+                              }
+                            }
+                          },
+                          "customers": {
+                            "type": "object",
+                            "properties": {
+                              "total": {
+                                "type": "integer",
+                                "example": 12
+                              }
+                            }
+                          },
+                          "messages": {
+                            "type": "object",
+                            "properties": {
+                              "total": {
+                                "type": "integer",
+                                "example": 84
+                              },
+                              "recent": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/api/admin/sessions": {
+        "get": {
+          "summary": "List Chat Sessions",
+          "description": "List all active chat conversation sessions with latest message details.",
+          "security": [
+            {
+              "bearerAuth": []
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Success"
+            }
+          }
+        }
+      },
+      "/api/admin/sessions/{sessionId}/messages": {
+        "get": {
+          "summary": "Get Session Message History",
+          "description": "Retrieve chronological message log for a specific chat session.",
+          "security": [
+            {
+              "bearerAuth": []
+            }
+          ],
+          "parameters": [
+            {
+              "name": "sessionId",
+              "in": "path",
+              "required": true,
+              "schema": {
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Success"
+            }
+          }
+        }
+      },
+      "/api/admin/sessions/{sessionId}/handover": {
+        "patch": {
+          "summary": "Toggle Support Handover Mode",
+          "description": "Enable or disable support human handover (human vs bot mode) for a session.",
+          "security": [
+            {
+              "bearerAuth": []
+            }
+          ],
+          "parameters": [
+            {
+              "name": "sessionId",
+              "in": "path",
+              "required": true,
+              "schema": {
+                "type": "string"
+              }
+            }
+          ],
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "is_handover": {
+                      "type": "boolean",
+                      "example": true
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Success"
+            }
+          }
+        }
+      },
+      "/api/admin/sessions/{sessionId}/status": {
+        "patch": {
+          "summary": "Update Session Status",
+          "description": "Change session status between OPEN, CLOSED, or PENDING.",
+          "security": [
+            {
+              "bearerAuth": []
+            }
+          ],
+          "parameters": [
+            {
+              "name": "sessionId",
+              "in": "path",
+              "required": true,
+              "schema": {
+                "type": "string"
+              }
+            }
+          ],
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "OPEN",
+                        "CLOSED",
+                        "PENDING"
+                      ],
+                      "example": "CLOSED"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Success"
+            }
+          }
+        }
+      },
+      "/": {
+        "get": {
+          "summary": "Welcome Endpoint",
+          "description": "Welcome message and API entry details.",
+          "responses": {
+            "200": {
+              "description": "Success",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "message": {
+                        "type": "string",
+                        "example": "Welcome to the JEA Demo Express Backend API"
+                      },
+                      "status": {
+                        "type": "string",
+                        "example": "healthy"
+                      },
+                      "documentation": {
+                        "type": "string",
+                        "example": "/api-docs"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/api": {
+        "get": {
+          "summary": "API Index",
+          "description": "Retrieve available API endpoints.",
+          "responses": {
+            "200": {
+              "description": "Success",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "message": {
+                        "type": "string",
+                        "example": "JEA API Root"
+                      },
+                      "endpoints": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "method": {
+                              "type": "string",
+                              "example": "GET"
+                            },
+                            "path": {
+                              "type": "string",
+                              "example": "/api/status"
+                            },
+                            "description": {
+                              "type": "string",
+                              "example": "Get API/System status"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/api/status": {
+        "get": {
+          "summary": "Get API Status",
+          "description": "Get current API online status and timestamp.",
+          "responses": {
+            "200": {
+              "description": "Success",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "status": {
+                        "type": "string",
+                        "example": "online"
+                      },
+                      "timestamp": {
+                        "type": "string",
+                        "example": "2026-07-15T13:00:44.182Z"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/api/health": {
+        "get": {
+          "summary": "Get System Health Report",
+          "description": "Retrieve detailed system health, uptime, and memory usage metrics.",
+          "responses": {
+            "200": {
+              "description": "Success",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "status": {
+                        "type": "string",
+                        "example": "healthy"
+                      },
+                      "uptime": {
+                        "type": "number",
+                        "example": 36.87
+                      },
+                      "memoryUsage": {
+                        "type": "object",
+                        "properties": {
+                          "rss": {
+                            "type": "integer",
+                            "example": 52989952
+                          },
+                          "heapTotal": {
+                            "type": "integer",
+                            "example": 9011200
+                          },
+                          "heapUsed": {
+                            "type": "integer",
+                            "example": 7519304
+                          },
+                          "external": {
+                            "type": "integer",
+                            "example": 2114516
+                          },
+                          "arrayBuffers": {
+                            "type": "integer",
+                            "example": 18891
+                          }
+                        }
+                      },
+                      "timestamp": {
+                        "type": "string",
+                        "example": "2026-07-15T13:00:44.185Z"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/api/whatsapp/send": {
+        "post": {
+          "summary": "Send WhatsApp Message",
+          "description": "Send a WhatsApp message using Twilio API. Requires configured Twilio credentials in the .env file.",
+          "requestBody": {
+            "required": true,
+            "content": {
+              "multipart/form-data": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "to"
+                  ],
+                  "properties": {
+                    "to": {
+                      "type": "string",
+                      "description": "Recipient phone number",
+                      "example": "+12025550123"
+                    },
+                    "message": {
+                      "type": "string",
+                      "description": "The message body content (optional if file is provided)",
+                      "example": "Hello from Express API!"
+                    },
+                    "file": {
+                      "type": "string",
+                      "format": "binary",
+                      "description": "Local file (image/PDF) to upload and send (optional if message is provided)"
+                    }
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "to"
+                  ],
+                  "properties": {
+                    "to": {
+                      "type": "string",
+                      "description": "Recipient phone number",
+                      "example": "+12025550123"
+                    },
+                    "message": {
+                      "type": "string",
+                      "description": "The message body content (optional if mediaUrl is provided)",
+                      "example": "Hello from Express API!"
+                    },
+                    "mediaUrl": {
+                      "type": "string",
+                      "description": "Public URL of an image or PDF to send (optional if message is provided)",
+                      "example": "https://images.unsplash.com/photo-1579546929518-9e396f3cc809"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Message Sent Successfully",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "success": {
+                        "type": "boolean",
+                        "example": true
+                      },
+                      "messageSid": {
+                        "type": "string",
+                        "example": "SM87fbc28f4bc9b4b0e527027c936efca7"
+                      },
+                      "status": {
+                        "type": "string",
+                        "example": "queued"
+                      },
+                      "to": {
+                        "type": "string",
+                        "example": "whatsapp:+12025550123"
+                      },
+                      "from": {
+                        "type": "string",
+                        "example": "whatsapp:+14155238886"
+                      },
+                      "body": {
+                        "type": "string",
+                        "example": "Hello from Express API!"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "400": {
+              "description": "Bad Request (Missing parameters)",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/ErrorResponse"
+                  }
+                }
+              }
+            },
+            "500": {
+              "description": "Internal Server Error (Missing/Invalid credentials)",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/ErrorResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/api/whatsapp/webhook": {
+        "post": {
+          "summary": "Twilio WhatsApp Webhook",
+          "description": "Webhook endpoint to receive incoming WhatsApp messages from Twilio. Returns Twilio Messaging TwiML XML.",
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/x-www-form-urlencoded": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "From",
+                    "Body",
+                    "MessageSid"
+                  ],
+                  "properties": {
+                    "From": {
+                      "type": "string",
+                      "description": "Sender phone number starting with 'whatsapp:'",
+                      "example": "whatsapp:+12025550123"
+                    },
+                    "Body": {
+                      "type": "string",
+                      "description": "Incoming message body text",
+                      "example": "Hello JEA API"
+                    },
+                    "MessageSid": {
+                      "type": "string",
+                      "description": "Twilio Message SID",
+                      "example": "SM87fbc28f4bc9b4b0e527027c936efca7"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "TwiML XML response acknowledging receipt and replying",
+              "content": {
+                "text/xml": {
+                  "schema": {
+                    "type": "string",
+                    "example": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><Response><Message>Hello! We received your message: \"Hello JEA API\"</Message></Response>"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/api/v1/users": {
+        "get": {
+          "tags": [
+            "User"
+          ],
+          "summary": "List User Records",
+          "description": "Retrieve a list of User records with support for limit/offset pagination and filters.",
+          "parameters": [
+            {
+              "name": "limit",
+              "in": "query",
+              "description": "Number of records to return",
+              "schema": {
+                "type": "integer",
+                "default": 50
+              }
+            },
+            {
+              "name": "offset",
+              "in": "query",
+              "description": "Number of records to skip",
+              "schema": {
+                "type": "integer",
+                "default": 0
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Success",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "success": {
+                        "type": "boolean",
+                        "example": true
+                      },
+                      "total": {
+                        "type": "integer",
+                        "example": 10
+                      },
+                      "limit": {
+                        "type": "integer",
+                        "example": 50
+                      },
+                      "offset": {
+                        "type": "integer",
+                        "example": 0
+                      },
+                      "data": {
+                        "type": "array",
+                        "items": {
+                          "type": "object"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "post": {
+          "tags": [
+            "User"
+          ],
+          "summary": "Create User",
+          "description": "Add a new User record.",
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "responses": {
+            "201": {
+              "description": "Created Successfully",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "success": {
+                        "type": "boolean",
+                        "example": true
+                      },
+                      "data": {
+                        "type": "object"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "400": {
+              "description": "Bad Request",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/ErrorResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/api/v1/users/{id}": {
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Primary key identifier of the User",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "get": {
+          "tags": [
+            "User"
+          ],
+          "summary": "Get User Details",
+          "description": "Fetch information for a single User by primary key.",
+          "responses": {
+            "200": {
+              "description": "Success",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "success": {
+                        "type": "boolean",
+                        "example": true
+                      },
+                      "data": {
+                        "type": "object"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "404": {
+              "description": "Not Found",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/ErrorResponse"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "put": {
+          "tags": [
+            "User"
+          ],
+          "summary": "Update User",
+          "description": "Modify attributes of an existing User by primary key.",
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Updated Successfully",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "success": {
+                        "type": "boolean",
+                        "example": true
+                      },
+                      "data": {
+                        "type": "object"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "404": {
+              "description": "Not Found",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/ErrorResponse"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "delete": {
+          "tags": [
+            "User"
+          ],
+          "summary": "Delete User",
+          "description": "Remove a User record by primary key.",
+          "responses": {
+            "200": {
+              "description": "Deleted Successfully",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "success": {
+                        "type": "boolean",
+                        "example": true
+                      },
+                      "message": {
+                        "type": "string",
+                        "example": "Resource deleted successfully"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "404": {
+              "description": "Not Found",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/ErrorResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/api/v1/employees": {
+        "get": {
+          "tags": [
+            "Employee"
+          ],
+          "summary": "List Employee Records",
+          "description": "Retrieve a list of Employee records with support for limit/offset pagination and filters.",
+          "parameters": [
+            {
+              "name": "limit",
+              "in": "query",
+              "description": "Number of records to return",
+              "schema": {
+                "type": "integer",
+                "default": 50
+              }
+            },
+            {
+              "name": "offset",
+              "in": "query",
+              "description": "Number of records to skip",
+              "schema": {
+                "type": "integer",
+                "default": 0
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Success",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "success": {
+                        "type": "boolean",
+                        "example": true
+                      },
+                      "total": {
+                        "type": "integer",
+                        "example": 10
+                      },
+                      "limit": {
+                        "type": "integer",
+                        "example": 50
+                      },
+                      "offset": {
+                        "type": "integer",
+                        "example": 0
+                      },
+                      "data": {
+                        "type": "array",
+                        "items": {
+                          "type": "object"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "post": {
+          "tags": [
+            "Employee"
+          ],
+          "summary": "Create Employee",
+          "description": "Add a new Employee record.",
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "responses": {
+            "201": {
+              "description": "Created Successfully",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "success": {
+                        "type": "boolean",
+                        "example": true
+                      },
+                      "data": {
+                        "type": "object"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "400": {
+              "description": "Bad Request",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/ErrorResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/api/v1/employees/{id}": {
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Primary key identifier of the Employee",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "get": {
+          "tags": [
+            "Employee"
+          ],
+          "summary": "Get Employee Details",
+          "description": "Fetch information for a single Employee by primary key.",
+          "responses": {
+            "200": {
+              "description": "Success",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "success": {
+                        "type": "boolean",
+                        "example": true
+                      },
+                      "data": {
+                        "type": "object"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "404": {
+              "description": "Not Found",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/ErrorResponse"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "put": {
+          "tags": [
+            "Employee"
+          ],
+          "summary": "Update Employee",
+          "description": "Modify attributes of an existing Employee by primary key.",
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Updated Successfully",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "success": {
+                        "type": "boolean",
+                        "example": true
+                      },
+                      "data": {
+                        "type": "object"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "404": {
+              "description": "Not Found",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/ErrorResponse"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "delete": {
+          "tags": [
+            "Employee"
+          ],
+          "summary": "Delete Employee",
+          "description": "Remove a Employee record by primary key.",
+          "responses": {
+            "200": {
+              "description": "Deleted Successfully",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "success": {
+                        "type": "boolean",
+                        "example": true
+                      },
+                      "message": {
+                        "type": "string",
+                        "example": "Resource deleted successfully"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "404": {
+              "description": "Not Found",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/ErrorResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/api/v1/customers": {
+        "get": {
+          "tags": [
+            "Customer"
+          ],
+          "summary": "List Customer Records",
+          "description": "Retrieve a list of Customer records with support for limit/offset pagination and filters.",
+          "parameters": [
+            {
+              "name": "limit",
+              "in": "query",
+              "description": "Number of records to return",
+              "schema": {
+                "type": "integer",
+                "default": 50
+              }
+            },
+            {
+              "name": "offset",
+              "in": "query",
+              "description": "Number of records to skip",
+              "schema": {
+                "type": "integer",
+                "default": 0
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Success",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "success": {
+                        "type": "boolean",
+                        "example": true
+                      },
+                      "total": {
+                        "type": "integer",
+                        "example": 10
+                      },
+                      "limit": {
+                        "type": "integer",
+                        "example": 50
+                      },
+                      "offset": {
+                        "type": "integer",
+                        "example": 0
+                      },
+                      "data": {
+                        "type": "array",
+                        "items": {
+                          "type": "object"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "post": {
+          "tags": [
+            "Customer"
+          ],
+          "summary": "Create Customer",
+          "description": "Add a new Customer record.",
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "responses": {
+            "201": {
+              "description": "Created Successfully",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "success": {
+                        "type": "boolean",
+                        "example": true
+                      },
+                      "data": {
+                        "type": "object"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "400": {
+              "description": "Bad Request",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/ErrorResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/api/v1/customers/{id}": {
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Primary key identifier of the Customer",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "get": {
+          "tags": [
+            "Customer"
+          ],
+          "summary": "Get Customer Details",
+          "description": "Fetch information for a single Customer by primary key.",
+          "responses": {
+            "200": {
+              "description": "Success",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "success": {
+                        "type": "boolean",
+                        "example": true
+                      },
+                      "data": {
+                        "type": "object"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "404": {
+              "description": "Not Found",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/ErrorResponse"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "put": {
+          "tags": [
+            "Customer"
+          ],
+          "summary": "Update Customer",
+          "description": "Modify attributes of an existing Customer by primary key.",
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Updated Successfully",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "success": {
+                        "type": "boolean",
+                        "example": true
+                      },
+                      "data": {
+                        "type": "object"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "404": {
+              "description": "Not Found",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/ErrorResponse"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "delete": {
+          "tags": [
+            "Customer"
+          ],
+          "summary": "Delete Customer",
+          "description": "Remove a Customer record by primary key.",
+          "responses": {
+            "200": {
+              "description": "Deleted Successfully",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "success": {
+                        "type": "boolean",
+                        "example": true
+                      },
+                      "message": {
+                        "type": "string",
+                        "example": "Resource deleted successfully"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "404": {
+              "description": "Not Found",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/ErrorResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/api/v1/sessions": {
+        "get": {
+          "tags": [
+            "Session"
+          ],
+          "summary": "List Session Records",
+          "description": "Retrieve a list of Session records with support for limit/offset pagination and filters.",
+          "parameters": [
+            {
+              "name": "limit",
+              "in": "query",
+              "description": "Number of records to return",
+              "schema": {
+                "type": "integer",
+                "default": 50
+              }
+            },
+            {
+              "name": "offset",
+              "in": "query",
+              "description": "Number of records to skip",
+              "schema": {
+                "type": "integer",
+                "default": 0
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Success",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "success": {
+                        "type": "boolean",
+                        "example": true
+                      },
+                      "total": {
+                        "type": "integer",
+                        "example": 10
+                      },
+                      "limit": {
+                        "type": "integer",
+                        "example": 50
+                      },
+                      "offset": {
+                        "type": "integer",
+                        "example": 0
+                      },
+                      "data": {
+                        "type": "array",
+                        "items": {
+                          "type": "object"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "post": {
+          "tags": [
+            "Session"
+          ],
+          "summary": "Create Session",
+          "description": "Add a new Session record.",
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "responses": {
+            "201": {
+              "description": "Created Successfully",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "success": {
+                        "type": "boolean",
+                        "example": true
+                      },
+                      "data": {
+                        "type": "object"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "400": {
+              "description": "Bad Request",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/ErrorResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/api/v1/sessions/{id}": {
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Primary key identifier of the Session",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "get": {
+          "tags": [
+            "Session"
+          ],
+          "summary": "Get Session Details",
+          "description": "Fetch information for a single Session by primary key.",
+          "responses": {
+            "200": {
+              "description": "Success",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "success": {
+                        "type": "boolean",
+                        "example": true
+                      },
+                      "data": {
+                        "type": "object"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "404": {
+              "description": "Not Found",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/ErrorResponse"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "put": {
+          "tags": [
+            "Session"
+          ],
+          "summary": "Update Session",
+          "description": "Modify attributes of an existing Session by primary key.",
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Updated Successfully",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "success": {
+                        "type": "boolean",
+                        "example": true
+                      },
+                      "data": {
+                        "type": "object"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "404": {
+              "description": "Not Found",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/ErrorResponse"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "delete": {
+          "tags": [
+            "Session"
+          ],
+          "summary": "Delete Session",
+          "description": "Remove a Session record by primary key.",
+          "responses": {
+            "200": {
+              "description": "Deleted Successfully",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "success": {
+                        "type": "boolean",
+                        "example": true
+                      },
+                      "message": {
+                        "type": "string",
+                        "example": "Resource deleted successfully"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "404": {
+              "description": "Not Found",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/ErrorResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/api/v1/messages": {
+        "get": {
+          "tags": [
+            "Message"
+          ],
+          "summary": "List Message Records",
+          "description": "Retrieve a list of Message records with support for limit/offset pagination and filters.",
+          "parameters": [
+            {
+              "name": "limit",
+              "in": "query",
+              "description": "Number of records to return",
+              "schema": {
+                "type": "integer",
+                "default": 50
+              }
+            },
+            {
+              "name": "offset",
+              "in": "query",
+              "description": "Number of records to skip",
+              "schema": {
+                "type": "integer",
+                "default": 0
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Success",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "success": {
+                        "type": "boolean",
+                        "example": true
+                      },
+                      "total": {
+                        "type": "integer",
+                        "example": 10
+                      },
+                      "limit": {
+                        "type": "integer",
+                        "example": 50
+                      },
+                      "offset": {
+                        "type": "integer",
+                        "example": 0
+                      },
+                      "data": {
+                        "type": "array",
+                        "items": {
+                          "type": "object"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "post": {
+          "tags": [
+            "Message"
+          ],
+          "summary": "Create Message",
+          "description": "Add a new Message record.",
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "responses": {
+            "201": {
+              "description": "Created Successfully",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "success": {
+                        "type": "boolean",
+                        "example": true
+                      },
+                      "data": {
+                        "type": "object"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "400": {
+              "description": "Bad Request",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/ErrorResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/api/v1/messages/{id}": {
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Primary key identifier of the Message",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "get": {
+          "tags": [
+            "Message"
+          ],
+          "summary": "Get Message Details",
+          "description": "Fetch information for a single Message by primary key.",
+          "responses": {
+            "200": {
+              "description": "Success",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "success": {
+                        "type": "boolean",
+                        "example": true
+                      },
+                      "data": {
+                        "type": "object"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "404": {
+              "description": "Not Found",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/ErrorResponse"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "put": {
+          "tags": [
+            "Message"
+          ],
+          "summary": "Update Message",
+          "description": "Modify attributes of an existing Message by primary key.",
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Updated Successfully",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "success": {
+                        "type": "boolean",
+                        "example": true
+                      },
+                      "data": {
+                        "type": "object"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "404": {
+              "description": "Not Found",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/ErrorResponse"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "delete": {
+          "tags": [
+            "Message"
+          ],
+          "summary": "Delete Message",
+          "description": "Remove a Message record by primary key.",
+          "responses": {
+            "200": {
+              "description": "Deleted Successfully",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "success": {
+                        "type": "boolean",
+                        "example": true
+                      },
+                      "message": {
+                        "type": "string",
+                        "example": "Resource deleted successfully"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "404": {
+              "description": "Not Found",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/ErrorResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/api/v1/campaigns": {
+        "get": {
+          "tags": [
+            "Campaign"
+          ],
+          "summary": "List Campaign Records",
+          "description": "Retrieve a list of Campaign records with support for limit/offset pagination and filters.",
+          "parameters": [
+            {
+              "name": "limit",
+              "in": "query",
+              "description": "Number of records to return",
+              "schema": {
+                "type": "integer",
+                "default": 50
+              }
+            },
+            {
+              "name": "offset",
+              "in": "query",
+              "description": "Number of records to skip",
+              "schema": {
+                "type": "integer",
+                "default": 0
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Success",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "success": {
+                        "type": "boolean",
+                        "example": true
+                      },
+                      "total": {
+                        "type": "integer",
+                        "example": 10
+                      },
+                      "limit": {
+                        "type": "integer",
+                        "example": 50
+                      },
+                      "offset": {
+                        "type": "integer",
+                        "example": 0
+                      },
+                      "data": {
+                        "type": "array",
+                        "items": {
+                          "type": "object"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "post": {
+          "tags": [
+            "Campaign"
+          ],
+          "summary": "Create Campaign",
+          "description": "Add a new Campaign record.",
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "responses": {
+            "201": {
+              "description": "Created Successfully",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "success": {
+                        "type": "boolean",
+                        "example": true
+                      },
+                      "data": {
+                        "type": "object"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "400": {
+              "description": "Bad Request",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/ErrorResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/api/v1/campaigns/{id}": {
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Primary key identifier of the Campaign",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "get": {
+          "tags": [
+            "Campaign"
+          ],
+          "summary": "Get Campaign Details",
+          "description": "Fetch information for a single Campaign by primary key.",
+          "responses": {
+            "200": {
+              "description": "Success",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "success": {
+                        "type": "boolean",
+                        "example": true
+                      },
+                      "data": {
+                        "type": "object"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "404": {
+              "description": "Not Found",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/ErrorResponse"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "put": {
+          "tags": [
+            "Campaign"
+          ],
+          "summary": "Update Campaign",
+          "description": "Modify attributes of an existing Campaign by primary key.",
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Updated Successfully",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "success": {
+                        "type": "boolean",
+                        "example": true
+                      },
+                      "data": {
+                        "type": "object"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "404": {
+              "description": "Not Found",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/ErrorResponse"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "delete": {
+          "tags": [
+            "Campaign"
+          ],
+          "summary": "Delete Campaign",
+          "description": "Remove a Campaign record by primary key.",
+          "responses": {
+            "200": {
+              "description": "Deleted Successfully",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "success": {
+                        "type": "boolean",
+                        "example": true
+                      },
+                      "message": {
+                        "type": "string",
+                        "example": "Resource deleted successfully"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "404": {
+              "description": "Not Found",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/ErrorResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/api/v1/ratings": {
+        "get": {
+          "tags": [
+            "Rating"
+          ],
+          "summary": "List Rating Records",
+          "description": "Retrieve a list of Rating records with support for limit/offset pagination and filters.",
+          "parameters": [
+            {
+              "name": "limit",
+              "in": "query",
+              "description": "Number of records to return",
+              "schema": {
+                "type": "integer",
+                "default": 50
+              }
+            },
+            {
+              "name": "offset",
+              "in": "query",
+              "description": "Number of records to skip",
+              "schema": {
+                "type": "integer",
+                "default": 0
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Success",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "success": {
+                        "type": "boolean",
+                        "example": true
+                      },
+                      "total": {
+                        "type": "integer",
+                        "example": 10
+                      },
+                      "limit": {
+                        "type": "integer",
+                        "example": 50
+                      },
+                      "offset": {
+                        "type": "integer",
+                        "example": 0
+                      },
+                      "data": {
+                        "type": "array",
+                        "items": {
+                          "type": "object"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "post": {
+          "tags": [
+            "Rating"
+          ],
+          "summary": "Create Rating",
+          "description": "Add a new Rating record.",
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "responses": {
+            "201": {
+              "description": "Created Successfully",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "success": {
+                        "type": "boolean",
+                        "example": true
+                      },
+                      "data": {
+                        "type": "object"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "400": {
+              "description": "Bad Request",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/ErrorResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/api/v1/ratings/{id}": {
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Primary key identifier of the Rating",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "get": {
+          "tags": [
+            "Rating"
+          ],
+          "summary": "Get Rating Details",
+          "description": "Fetch information for a single Rating by primary key.",
+          "responses": {
+            "200": {
+              "description": "Success",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "success": {
+                        "type": "boolean",
+                        "example": true
+                      },
+                      "data": {
+                        "type": "object"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "404": {
+              "description": "Not Found",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/ErrorResponse"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "put": {
+          "tags": [
+            "Rating"
+          ],
+          "summary": "Update Rating",
+          "description": "Modify attributes of an existing Rating by primary key.",
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Updated Successfully",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "success": {
+                        "type": "boolean",
+                        "example": true
+                      },
+                      "data": {
+                        "type": "object"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "404": {
+              "description": "Not Found",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/ErrorResponse"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "delete": {
+          "tags": [
+            "Rating"
+          ],
+          "summary": "Delete Rating",
+          "description": "Remove a Rating record by primary key.",
+          "responses": {
+            "200": {
+              "description": "Deleted Successfully",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "success": {
+                        "type": "boolean",
+                        "example": true
+                      },
+                      "message": {
+                        "type": "string",
+                        "example": "Resource deleted successfully"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "404": {
+              "description": "Not Found",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/ErrorResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/api/v1/tickets": {
+        "get": {
+          "tags": [
+            "Ticket"
+          ],
+          "summary": "List Ticket Records",
+          "description": "Retrieve a list of Ticket records with support for limit/offset pagination and filters.",
+          "parameters": [
+            {
+              "name": "limit",
+              "in": "query",
+              "description": "Number of records to return",
+              "schema": {
+                "type": "integer",
+                "default": 50
+              }
+            },
+            {
+              "name": "offset",
+              "in": "query",
+              "description": "Number of records to skip",
+              "schema": {
+                "type": "integer",
+                "default": 0
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Success",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "success": {
+                        "type": "boolean",
+                        "example": true
+                      },
+                      "total": {
+                        "type": "integer",
+                        "example": 10
+                      },
+                      "limit": {
+                        "type": "integer",
+                        "example": 50
+                      },
+                      "offset": {
+                        "type": "integer",
+                        "example": 0
+                      },
+                      "data": {
+                        "type": "array",
+                        "items": {
+                          "type": "object"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "post": {
+          "tags": [
+            "Ticket"
+          ],
+          "summary": "Create Ticket",
+          "description": "Add a new Ticket record.",
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "responses": {
+            "201": {
+              "description": "Created Successfully",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "success": {
+                        "type": "boolean",
+                        "example": true
+                      },
+                      "data": {
+                        "type": "object"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "400": {
+              "description": "Bad Request",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/ErrorResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/api/v1/tickets/{id}": {
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Primary key identifier of the Ticket",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "get": {
+          "tags": [
+            "Ticket"
+          ],
+          "summary": "Get Ticket Details",
+          "description": "Fetch information for a single Ticket by primary key.",
+          "responses": {
+            "200": {
+              "description": "Success",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "success": {
+                        "type": "boolean",
+                        "example": true
+                      },
+                      "data": {
+                        "type": "object"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "404": {
+              "description": "Not Found",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/ErrorResponse"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "put": {
+          "tags": [
+            "Ticket"
+          ],
+          "summary": "Update Ticket",
+          "description": "Modify attributes of an existing Ticket by primary key.",
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Updated Successfully",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "success": {
+                        "type": "boolean",
+                        "example": true
+                      },
+                      "data": {
+                        "type": "object"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "404": {
+              "description": "Not Found",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/ErrorResponse"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "delete": {
+          "tags": [
+            "Ticket"
+          ],
+          "summary": "Delete Ticket",
+          "description": "Remove a Ticket record by primary key.",
+          "responses": {
+            "200": {
+              "description": "Deleted Successfully",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "success": {
+                        "type": "boolean",
+                        "example": true
+                      },
+                      "message": {
+                        "type": "string",
+                        "example": "Resource deleted successfully"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "404": {
+              "description": "Not Found",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/ErrorResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/api/v1/service-categories": {
+        "get": {
+          "tags": [
+            "Service Category"
+          ],
+          "summary": "List Service Category Records",
+          "description": "Retrieve a list of Service Category records with support for limit/offset pagination and filters.",
+          "parameters": [
+            {
+              "name": "limit",
+              "in": "query",
+              "description": "Number of records to return",
+              "schema": {
+                "type": "integer",
+                "default": 50
+              }
+            },
+            {
+              "name": "offset",
+              "in": "query",
+              "description": "Number of records to skip",
+              "schema": {
+                "type": "integer",
+                "default": 0
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Success",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "success": {
+                        "type": "boolean",
+                        "example": true
+                      },
+                      "total": {
+                        "type": "integer",
+                        "example": 10
+                      },
+                      "limit": {
+                        "type": "integer",
+                        "example": 50
+                      },
+                      "offset": {
+                        "type": "integer",
+                        "example": 0
+                      },
+                      "data": {
+                        "type": "array",
+                        "items": {
+                          "type": "object"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "post": {
+          "tags": [
+            "Service Category"
+          ],
+          "summary": "Create Service Category",
+          "description": "Add a new Service Category record.",
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "responses": {
+            "201": {
+              "description": "Created Successfully",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "success": {
+                        "type": "boolean",
+                        "example": true
+                      },
+                      "data": {
+                        "type": "object"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "400": {
+              "description": "Bad Request",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/ErrorResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/api/v1/service-categories/{id}": {
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Primary key identifier of the Service Category",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "get": {
+          "tags": [
+            "Service Category"
+          ],
+          "summary": "Get Service Category Details",
+          "description": "Fetch information for a single Service Category by primary key.",
+          "responses": {
+            "200": {
+              "description": "Success",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "success": {
+                        "type": "boolean",
+                        "example": true
+                      },
+                      "data": {
+                        "type": "object"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "404": {
+              "description": "Not Found",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/ErrorResponse"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "put": {
+          "tags": [
+            "Service Category"
+          ],
+          "summary": "Update Service Category",
+          "description": "Modify attributes of an existing Service Category by primary key.",
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Updated Successfully",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "success": {
+                        "type": "boolean",
+                        "example": true
+                      },
+                      "data": {
+                        "type": "object"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "404": {
+              "description": "Not Found",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/ErrorResponse"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "delete": {
+          "tags": [
+            "Service Category"
+          ],
+          "summary": "Delete Service Category",
+          "description": "Remove a Service Category record by primary key.",
+          "responses": {
+            "200": {
+              "description": "Deleted Successfully",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "success": {
+                        "type": "boolean",
+                        "example": true
+                      },
+                      "message": {
+                        "type": "string",
+                        "example": "Resource deleted successfully"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "404": {
+              "description": "Not Found",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/ErrorResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/api/v1/employee-service-categories": {
+        "get": {
+          "tags": [
+            "Employee Service Category Junction"
+          ],
+          "summary": "List Employee Service Category Junction Records",
+          "description": "Retrieve a list of Employee Service Category Junction records with support for limit/offset pagination and filters.",
+          "parameters": [
+            {
+              "name": "limit",
+              "in": "query",
+              "description": "Number of records to return",
+              "schema": {
+                "type": "integer",
+                "default": 50
+              }
+            },
+            {
+              "name": "offset",
+              "in": "query",
+              "description": "Number of records to skip",
+              "schema": {
+                "type": "integer",
+                "default": 0
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Success",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "success": {
+                        "type": "boolean",
+                        "example": true
+                      },
+                      "total": {
+                        "type": "integer",
+                        "example": 10
+                      },
+                      "limit": {
+                        "type": "integer",
+                        "example": 50
+                      },
+                      "offset": {
+                        "type": "integer",
+                        "example": 0
+                      },
+                      "data": {
+                        "type": "array",
+                        "items": {
+                          "type": "object"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "post": {
+          "tags": [
+            "Employee Service Category Junction"
+          ],
+          "summary": "Create Employee Service Category Junction",
+          "description": "Add a new Employee Service Category Junction record.",
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "responses": {
+            "201": {
+              "description": "Created Successfully",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "success": {
+                        "type": "boolean",
+                        "example": true
+                      },
+                      "data": {
+                        "type": "object"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "400": {
+              "description": "Bad Request",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/ErrorResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/api/v1/employee-service-categories/{id}": {
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Primary key identifier of the Employee Service Category Junction",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "get": {
+          "tags": [
+            "Employee Service Category Junction"
+          ],
+          "summary": "Get Employee Service Category Junction Details",
+          "description": "Fetch information for a single Employee Service Category Junction by primary key.",
+          "responses": {
+            "200": {
+              "description": "Success",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "success": {
+                        "type": "boolean",
+                        "example": true
+                      },
+                      "data": {
+                        "type": "object"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "404": {
+              "description": "Not Found",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/ErrorResponse"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "put": {
+          "tags": [
+            "Employee Service Category Junction"
+          ],
+          "summary": "Update Employee Service Category Junction",
+          "description": "Modify attributes of an existing Employee Service Category Junction by primary key.",
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Updated Successfully",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "success": {
+                        "type": "boolean",
+                        "example": true
+                      },
+                      "data": {
+                        "type": "object"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "404": {
+              "description": "Not Found",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/ErrorResponse"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "delete": {
+          "tags": [
+            "Employee Service Category Junction"
+          ],
+          "summary": "Delete Employee Service Category Junction",
+          "description": "Remove a Employee Service Category Junction record by primary key.",
+          "responses": {
+            "200": {
+              "description": "Deleted Successfully",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "success": {
+                        "type": "boolean",
+                        "example": true
+                      },
+                      "message": {
+                        "type": "string",
+                        "example": "Resource deleted successfully"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "404": {
+              "description": "Not Found",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/ErrorResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/api/v1/qas": {
+        "get": {
+          "tags": [
+            "QA Knowledge Base"
+          ],
+          "summary": "List QA Knowledge Base Records",
+          "description": "Retrieve a list of QA Knowledge Base records with support for limit/offset pagination and filters.",
+          "parameters": [
+            {
+              "name": "limit",
+              "in": "query",
+              "description": "Number of records to return",
+              "schema": {
+                "type": "integer",
+                "default": 50
+              }
+            },
+            {
+              "name": "offset",
+              "in": "query",
+              "description": "Number of records to skip",
+              "schema": {
+                "type": "integer",
+                "default": 0
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Success",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "success": {
+                        "type": "boolean",
+                        "example": true
+                      },
+                      "total": {
+                        "type": "integer",
+                        "example": 10
+                      },
+                      "limit": {
+                        "type": "integer",
+                        "example": 50
+                      },
+                      "offset": {
+                        "type": "integer",
+                        "example": 0
+                      },
+                      "data": {
+                        "type": "array",
+                        "items": {
+                          "type": "object"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "post": {
+          "tags": [
+            "QA Knowledge Base"
+          ],
+          "summary": "Create QA Knowledge Base",
+          "description": "Add a new QA Knowledge Base record.",
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "responses": {
+            "201": {
+              "description": "Created Successfully",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "success": {
+                        "type": "boolean",
+                        "example": true
+                      },
+                      "data": {
+                        "type": "object"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "400": {
+              "description": "Bad Request",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/ErrorResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/api/v1/qas/{id}": {
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Primary key identifier of the QA Knowledge Base",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "get": {
+          "tags": [
+            "QA Knowledge Base"
+          ],
+          "summary": "Get QA Knowledge Base Details",
+          "description": "Fetch information for a single QA Knowledge Base by primary key.",
+          "responses": {
+            "200": {
+              "description": "Success",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "success": {
+                        "type": "boolean",
+                        "example": true
+                      },
+                      "data": {
+                        "type": "object"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "404": {
+              "description": "Not Found",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/ErrorResponse"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "put": {
+          "tags": [
+            "QA Knowledge Base"
+          ],
+          "summary": "Update QA Knowledge Base",
+          "description": "Modify attributes of an existing QA Knowledge Base by primary key.",
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Updated Successfully",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "success": {
+                        "type": "boolean",
+                        "example": true
+                      },
+                      "data": {
+                        "type": "object"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "404": {
+              "description": "Not Found",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/ErrorResponse"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "delete": {
+          "tags": [
+            "QA Knowledge Base"
+          ],
+          "summary": "Delete QA Knowledge Base",
+          "description": "Remove a QA Knowledge Base record by primary key.",
+          "responses": {
+            "200": {
+              "description": "Deleted Successfully",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "success": {
+                        "type": "boolean",
+                        "example": true
+                      },
+                      "message": {
+                        "type": "string",
+                        "example": "Resource deleted successfully"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "404": {
+              "description": "Not Found",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/ErrorResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/api/v1/notifications": {
+        "get": {
+          "tags": [
+            "Notification"
+          ],
+          "summary": "List Notification Records",
+          "description": "Retrieve a list of Notification records with support for limit/offset pagination and filters.",
+          "parameters": [
+            {
+              "name": "limit",
+              "in": "query",
+              "description": "Number of records to return",
+              "schema": {
+                "type": "integer",
+                "default": 50
+              }
+            },
+            {
+              "name": "offset",
+              "in": "query",
+              "description": "Number of records to skip",
+              "schema": {
+                "type": "integer",
+                "default": 0
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Success",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "success": {
+                        "type": "boolean",
+                        "example": true
+                      },
+                      "total": {
+                        "type": "integer",
+                        "example": 10
+                      },
+                      "limit": {
+                        "type": "integer",
+                        "example": 50
+                      },
+                      "offset": {
+                        "type": "integer",
+                        "example": 0
+                      },
+                      "data": {
+                        "type": "array",
+                        "items": {
+                          "type": "object"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "post": {
+          "tags": [
+            "Notification"
+          ],
+          "summary": "Create Notification",
+          "description": "Add a new Notification record.",
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "responses": {
+            "201": {
+              "description": "Created Successfully",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "success": {
+                        "type": "boolean",
+                        "example": true
+                      },
+                      "data": {
+                        "type": "object"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "400": {
+              "description": "Bad Request",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/ErrorResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/api/v1/notifications/{id}": {
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Primary key identifier of the Notification",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "get": {
+          "tags": [
+            "Notification"
+          ],
+          "summary": "Get Notification Details",
+          "description": "Fetch information for a single Notification by primary key.",
+          "responses": {
+            "200": {
+              "description": "Success",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "success": {
+                        "type": "boolean",
+                        "example": true
+                      },
+                      "data": {
+                        "type": "object"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "404": {
+              "description": "Not Found",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/ErrorResponse"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "put": {
+          "tags": [
+            "Notification"
+          ],
+          "summary": "Update Notification",
+          "description": "Modify attributes of an existing Notification by primary key.",
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Updated Successfully",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "success": {
+                        "type": "boolean",
+                        "example": true
+                      },
+                      "data": {
+                        "type": "object"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "404": {
+              "description": "Not Found",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/ErrorResponse"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "delete": {
+          "tags": [
+            "Notification"
+          ],
+          "summary": "Delete Notification",
+          "description": "Remove a Notification record by primary key.",
+          "responses": {
+            "200": {
+              "description": "Deleted Successfully",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "success": {
+                        "type": "boolean",
+                        "example": true
+                      },
+                      "message": {
+                        "type": "string",
+                        "example": "Resource deleted successfully"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "404": {
+              "description": "Not Found",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/ErrorResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/api/v1/audit-logs": {
+        "get": {
+          "tags": [
+            "Audit Log"
+          ],
+          "summary": "List Audit Log Records",
+          "description": "Retrieve a list of database audit logs with pagination and filters.",
+          "parameters": [
+            {
+              "name": "limit",
+              "in": "query",
+              "description": "Number of records to return",
+              "schema": {
+                "type": "integer",
+                "default": 50
+              }
+            },
+            {
+              "name": "offset",
+              "in": "query",
+              "description": "Number of records to skip",
+              "schema": {
+                "type": "integer",
+                "default": 0
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Success",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "success": {
+                        "type": "boolean",
+                        "example": true
+                      },
+                      "total": {
+                        "type": "integer",
+                        "example": 10
+                      },
+                      "limit": {
+                        "type": "integer",
+                        "example": 50
+                      },
+                      "offset": {
+                        "type": "integer",
+                        "example": 0
+                      },
+                      "data": {
+                        "type": "array",
+                        "items": {
+                          "type": "object"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/api/v1/audit-logs/{id}": {
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Primary key identifier of the Audit Log",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "get": {
+          "tags": [
+            "Audit Log"
+          ],
+          "summary": "Get Audit Log Details",
+          "description": "Fetch detailed information for a single audit log entry.",
+          "responses": {
+            "200": {
+              "description": "Success",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "success": {
+                        "type": "boolean",
+                        "example": true
+                      },
+                      "data": {
+                        "type": "object"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "404": {
+              "description": "Not Found",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/ErrorResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/api/v1/upload": {
+        "post": {
+          "tags": [
+            "Upload"
+          ],
+          "summary": "Upload File to FTP Storage",
+          "description": "Uploads a multipart form file to the local FTP server and returns the file link.",
+          "requestBody": {
+            "required": true,
+            "content": {
+              "multipart/form-data": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "file"
+                  ],
+                  "properties": {
+                    "file": {
+                      "type": "string",
+                      "format": "binary",
+                      "description": "The file to upload to the FTP server (maximum size 10MB)"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "File uploaded successfully to FTP storage",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "success": {
+                        "type": "boolean",
+                        "example": true
+                      },
+                      "message": {
+                        "type": "string",
+                        "example": "File uploaded successfully to FTP storage."
+                      },
+                      "url": {
+                        "type": "string",
+                        "example": "ftp://localhost/public_html/uploads/1628177481912-example.png"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "400": {
+              "description": "Bad Request",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/ErrorResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "components": {
+      "schemas": {
+        "ErrorResponse": {
+          "type": "object",
+          "properties": {
+            "error": {
+              "type": "object",
+              "properties": {
+                "message": {
+                  "type": "string",
+                  "example": "Error description message"
+                },
+                "status": {
+                  "type": "integer",
+                  "example": 400
+                },
+                "timestamp": {
+                  "type": "string",
+                  "example": "2026-07-15T13:02:59.014Z"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
