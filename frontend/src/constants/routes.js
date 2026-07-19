@@ -14,6 +14,9 @@ export const ROUTES = {
   SESSIONS_MGMT: "/sessions-mgmt",
   CUSTOMERS: "/customers",
   EMPLOYEES: "/employees",
+  QAS: "/qas",
+  SERVICE_CATEGORIES: "/service-categories",
+  ESC: "/employee-service-categories",
   LOGIN: "/login",
 };
 

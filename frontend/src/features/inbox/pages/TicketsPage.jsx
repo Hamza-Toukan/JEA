@@ -18,7 +18,9 @@ import { Tabs } from "@/components/ui/Tabs";
 import { Select, Textarea } from "@/components/ui/Input";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 import { MOCK_TICKETS } from "../data/mock";
-import { useInboxConversations } from "../hooks/use-inbox-conversations";
+import { useTickets } from "@/features/tickets/hooks/use-tickets";
+import { useCustomers } from "@/features/customers/hooks/use-customers";
+import { useEmployees } from "@/features/employees/hooks/use-employees";
 import { APP_CONFIG } from "@/config/app";
 
 const TICKET_TABS = [
@@ -30,20 +32,28 @@ const TICKET_TABS = [
 
 const PRIORITY_MAP = {
   high: { label: "عالية جداً", variant: "danger" },
+  urgent: { label: "عاجلة", variant: "danger" },
+  medium: { label: "متوسطة", variant: "warning" },
   normal: { label: "متوسطة", variant: "warning" },
   low: { label: "منخفضة", variant: "neutral" },
 };
 
 const STATUS_MAP = {
   new: { label: "جديدة", variant: "info" },
+  open: { label: "مفتوحة", variant: "info" },
   pending: { label: "قيد المتابعة", variant: "warning" },
+  in_progress: { label: "قيد المتابعة", variant: "warning" },
   resolved: { label: "محلولة", variant: "success" },
+  closed: { label: "مغلقة", variant: "neutral" },
 };
 
 export function TicketsPage() {
-  const { data: apiData } = useInboxConversations({
+  const { data: apiData } = useTickets({
     enabled: APP_CONFIG.apiEnabled
   });
+  
+  const { data: customersData } = useCustomers({ enabled: APP_CONFIG.apiEnabled });
+  const { data: employeesData } = useEmployees({ enabled: APP_CONFIG.apiEnabled });
 
   const [tickets, setTickets] = useState(MOCK_TICKETS);
   const [selected, setSelected] = useState(null); // Initially null - only show the list!
@@ -54,47 +64,36 @@ export function TicketsPage() {
 
   // Sync API data if enabled
   useEffect(() => {
-    if (APP_CONFIG.apiEnabled && apiData?.items) {
-      const apiTickets = apiData.items
-        .filter(c => c.raw?.ticketNumber)
-        .map(apiConv => {
-          const messages = apiConv.raw?.messages?.map((m, idx) => ({
-            id: m._id || idx,
-            role: m.sender === "bot" ? "ai" : m.sender,
-            text: m.body,
-            time: m.createdAt ? new Date(m.createdAt).toLocaleTimeString("ar-JO", { hour: "2-digit", minute: "2-digit" }) : "غير محدد"
-          })) || [];
+    if (APP_CONFIG.apiEnabled && apiData?.data) {
+      const allCustomers = customersData?.data || [];
+      const allEmployees = employeesData?.data || [];
+      
+      const apiTickets = apiData.data.map(apiTicket => {
+        const customer = allCustomers.find(c => c.member_id === apiTicket.user_id);
+        const employee = allEmployees.find(e => e.id === apiTicket.emp_assigned);
 
-          const timeline = apiConv.raw?.internalNotes?.map((note, idx) => ({
-            id: idx,
-            type: "comment",
-            text: `ملاحظة داخلية: ${note.note}`,
-            time: note.createdAt ? new Date(note.createdAt).toLocaleDateString("ar-JO") : "الآن"
-          })) || [];
-
-          return {
-            id: apiConv.raw.ticketNumber || apiConv.id,
-            name: apiConv.name || "عضو نقابة",
-            topic: apiConv.topic || "استفسار عام",
-            description: apiConv.preview || "لا يوجد وصف للتذكرة.",
-            time: apiConv.time ? new Date(apiConv.time).toLocaleDateString("ar-JO") : "",
-            priority: apiConv.raw?.priority || "normal",
-            status: apiConv.raw?.ticketStatus || "pending",
-            assignee: apiConv.raw?.assignee || "غير مسند",
-            category: apiConv.raw?.category || "شؤون الأعضاء",
-            updated: apiConv.raw?.updatedAt ? new Date(apiConv.raw.updatedAt).toLocaleDateString("ar-JO") : "",
-            memberId: apiConv.raw?.memberId || "غير محدد",
-            joinYear: apiConv.raw?.joinYear || "2020",
-            statusSubscription: apiConv.raw?.membershipStatus || "نشط",
-            trustLevel: apiConv.raw?.trustLevel || 90,
-            phone: apiConv.raw?.customerPhone || "",
-            messages: messages,
-            timeline: [
-              { id: "sys-1", type: "system", text: "تم إنشاء التذكرة تلقائياً بواسطة المساعد الذكي", time: "البداية" },
-              ...timeline
-            ]
-          };
-        });
+        return {
+          id: apiTicket.ticket_id,
+          name: customer ? customer.name : apiTicket.user_id,
+          topic: apiTicket.title || "استفسار",
+          description: apiTicket.content || "لا يوجد وصف للتذكرة.",
+          time: apiTicket.created_at ? new Date(apiTicket.created_at).toLocaleDateString("ar-JO") : "",
+          priority: String(apiTicket.ticket_priority).toLowerCase() || "normal",
+          status: String(apiTicket.status).toLowerCase() || "pending",
+          assignee: employee ? employee.name : "غير مسند",
+          category: "شؤون الأعضاء",
+          updated: apiTicket.updated_at ? new Date(apiTicket.updated_at).toLocaleDateString("ar-JO") : "",
+          memberId: customer ? customer.member_id : apiTicket.user_id,
+          joinYear: "2020",
+          statusSubscription: customer ? customer.role : "نشط",
+          trustLevel: 90,
+          phone: customer ? customer.phone : "",
+          messages: [], // Tickets might not have direct messages unless linked
+          timeline: [
+            { id: "sys-1", type: "system", text: "تم إنشاء التذكرة", time: apiTicket.created_at ? new Date(apiTicket.created_at).toLocaleDateString("ar-JO") : "البداية" }
+          ]
+        };
+      });
 
       if (apiTickets.length > 0) {
         setTickets(apiTickets);
@@ -106,7 +105,7 @@ export function TicketsPage() {
         }
       }
     }
-  }, [apiData]);
+  }, [apiData, customersData, employeesData]);
 
   const handleAddComment = (e) => {
     e.preventDefault();
@@ -224,8 +223,8 @@ export function TicketsPage() {
             ) : (
               filteredTickets.map((t) => {
                 const isSelected = selected && selected.id === t.id;
-                const statusInfo = STATUS_MAP[t.status];
-                const priorityInfo = PRIORITY_MAP[t.priority];
+                const statusInfo = STATUS_MAP[t.status] || { label: t.status, variant: "neutral" };
+                const priorityInfo = PRIORITY_MAP[t.priority] || { label: t.priority, variant: "neutral" };
                 return (
                   <button
                     key={t.id}
@@ -273,8 +272,8 @@ export function TicketsPage() {
                   <h3 className="text-sm font-semibold text-primary">{selected.name}</h3>
                   <Badge variant="neutral" className="ltr cursor-pointer">{selected.phone}</Badge>
                 </div>
-                <Badge variant={STATUS_MAP[selected.status].variant}>
-                  {STATUS_MAP[selected.status].label}
+                <Badge variant={(STATUS_MAP[selected.status] || {variant: "neutral"}).variant}>
+                  {(STATUS_MAP[selected.status] || {label: selected.status}).label}
                 </Badge>
               </div>
               <div className="flex items-center gap-2">
@@ -354,15 +353,18 @@ export function TicketsPage() {
                   </div>
                   <div className="flex-1 min-w-[150px]">
                     <label className="block text-[10px] font-semibold text-primary mb-1">تغيير حالة التذكرة</label>
-                    <Select
-                      value={selected.status}
-                      onChange={(e) => handleUpdateStatus(e.target.value)}
-                      className="text-xs h-8"
-                    >
-                      <option value="new">جديدة</option>
-                      <option value="pending">قيد المتابعة</option>
-                      <option value="resolved">محلولة</option>
-                    </Select>
+                      <Select
+                        value={selected.status}
+                        onChange={(e) => handleUpdateStatus(e.target.value)}
+                        className="text-xs h-8"
+                      >
+                        <option value="new">جديدة</option>
+                        <option value="open">مفتوحة</option>
+                        <option value="pending">قيد المتابعة</option>
+                        <option value="in_progress">قيد المعالجة</option>
+                        <option value="resolved">محلولة</option>
+                        <option value="closed">مغلقة</option>
+                      </Select>
                   </div>
                 </div>
               )}

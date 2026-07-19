@@ -52,17 +52,17 @@ export function RatingsPage() {
                   </tr>
                 ) : (
                   ratings.map((rating) => (
-                    <tr key={rating.id || Math.random().toString()} className="hover:bg-slate-50">
-                      <td className="px-6 py-4 font-medium">{rating.id || "-"}</td>
+                    <tr key={rating.rate_id || Math.random().toString()} className="hover:bg-slate-50">
+                      <td className="px-6 py-4 font-medium">{rating.rate_id || "-"}</td>
                       <td className="px-6 py-4">
                         <div className="flex text-yellow-400">
                           {Array.from({ length: 5 }).map((_, i) => (
-                            <Star key={i} className={`h-4 w-4 ${i < (rating.score || 0) ? "fill-current" : "text-gray-300"}`} />
+                            <Star key={i} className={`h-4 w-4 ${i < (rating.rate_value || 0) ? "fill-current" : "text-gray-300"}`} />
                           ))}
                         </div>
                       </td>
-                      <td className="px-6 py-4">{rating.comment || "-"}</td>
-                      <td className="px-6 py-4">{rating.createdAt ? new Date(rating.createdAt).toLocaleDateString("ar-JO") : "-"}</td>
+                      <td className="px-6 py-4">{rating.comments || "-"}</td>
+                      <td className="px-6 py-4">{rating.created_at || rating.createdAt ? new Date(rating.created_at || rating.createdAt).toLocaleDateString("ar-JO") : "-"}</td>
                     </tr>
                   ))
                 )}

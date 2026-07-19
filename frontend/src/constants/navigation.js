@@ -12,6 +12,9 @@ import {
   MessageSquare,
   Megaphone,
   Star,
+  FolderTree,
+  Network,
+  HelpCircle
 } from "lucide-react";
 import { ROUTES } from "./routes";
 

@@ -8,7 +8,6 @@ import { RatingsPage } from "@/features/ratings";
 import { CampaignsPage } from "@/features/campaigns";
 import { CustomersPage } from "@/features/customers";
 import { EmployeesPage } from "@/features/employees";
-
 import { SettingsPage } from "@/features/settings";
 
 /**

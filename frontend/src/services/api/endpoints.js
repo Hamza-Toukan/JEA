@@ -74,6 +74,14 @@ export const API_ENDPOINTS = {
     delete: (id) => `/api/v1/sessions/${id}`,
   },
 
+  tickets: {
+    list: "/api/v1/tickets",
+    create: "/api/v1/tickets",
+    detail: (id) => `/api/v1/tickets/${id}`,
+    update: (id) => `/api/v1/tickets/${id}`,
+    delete: (id) => `/api/v1/tickets/${id}`,
+  },
+
   customers: {
     list: "/api/v1/customers",
     create: "/api/v1/customers",
@@ -88,5 +96,45 @@ export const API_ENDPOINTS = {
     detail: (id) => `/api/v1/employees/${id}`,
     update: (id) => `/api/v1/employees/${id}`,
     delete: (id) => `/api/v1/employees/${id}`,
+  },
+
+  qas: {
+    list: "/api/v1/qas",
+    create: "/api/v1/qas",
+    detail: (id) => `/api/v1/qas/${id}`,
+    update: (id) => `/api/v1/qas/${id}`,
+    delete: (id) => `/api/v1/qas/${id}`,
+  },
+
+  auditLogs: {
+    list: "/api/v1/audit-logs",
+    create: "/api/v1/audit-logs",
+    detail: (id) => `/api/v1/audit-logs/${id}`,
+    update: (id) => `/api/v1/audit-logs/${id}`,
+    delete: (id) => `/api/v1/audit-logs/${id}`,
+  },
+
+  notifications: {
+    list: "/api/v1/notifications",
+    create: "/api/v1/notifications",
+    detail: (id) => `/api/v1/notifications/${id}`,
+    update: (id) => `/api/v1/notifications/${id}`,
+    delete: (id) => `/api/v1/notifications/${id}`,
+  },
+
+  serviceCategories: {
+    list: "/api/v1/service-categories",
+    create: "/api/v1/service-categories",
+    detail: (id) => `/api/v1/service-categories/${id}`,
+    update: (id) => `/api/v1/service-categories/${id}`,
+    delete: (id) => `/api/v1/service-categories/${id}`,
+  },
+
+  employeeServiceCategories: {
+    list: "/api/v1/employee-service-categories",
+    create: "/api/v1/employee-service-categories",
+    detail: (id) => `/api/v1/employee-service-categories/${id}`,
+    update: (id) => `/api/v1/employee-service-categories/${id}`,
+    delete: (id) => `/api/v1/employee-service-categories/${id}`,
   },
 };

@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Bell, Shield, Users, CheckCircle2 } from "lucide-react";
+import { Bell, Shield, Users, CheckCircle2, ClipboardList } from "lucide-react";
+import { useAuditLogs } from "../hooks/use-audit-logs";
 import { PageContainer, SectionHeader } from "@/components/layout";
 import { Card, CardHeader, CardBody } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -24,6 +25,12 @@ const SECTIONS = [
     icon: Bell,
     title: "التنبيهات",
     description: "تنبيهات التصعيد والأخطاء الفورية",
+  },
+  {
+    id: "audit",
+    icon: ClipboardList,
+    title: "سجل النشاطات",
+    description: "سجل التدقيق لمراقبة جميع حركات النظام",
   },
 ];
 
@@ -50,6 +57,10 @@ export function SettingsPage() {
   const [escalationAlerts, setEscalationAlerts] = useState(true);
   const [dailyReports, setDailyReports] = useState(false);
   const [systemAlerts, setSystemAlerts] = useState(true);
+
+  // Audit Logs State
+  const { data: auditLogsData, isLoading: isLoadingAuditLogs } = useAuditLogs();
+  const auditLogs = auditLogsData?.data || [];
 
   const handleSave = () => {
     setShowToast(true);
@@ -270,6 +281,48 @@ export function SettingsPage() {
                     onChange={(e) => setSystemAlerts(e.target.checked)}
                     className="h-4 w-4 rounded border-border-subtle text-primary focus:ring-primary cursor-pointer"
                   />
+                </div>
+              </CardBody>
+            </Card>
+          )}
+
+          {activeSection === "audit" && (
+            <Card>
+              <CardHeader title="سجل النشاطات (Audit Logs)" />
+              <CardBody className="p-0">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-start text-sm">
+                    <thead>
+                      <tr className="border-b border-border-subtle bg-background-subtle text-muted text-xs">
+                        <th className="px-4 py-3 font-semibold">المعرف</th>
+                        <th className="px-4 py-3 font-semibold">الموظف</th>
+                        <th className="px-4 py-3 font-semibold">النشاط</th>
+                        <th className="px-4 py-3 font-semibold">الكيان</th>
+                        <th className="px-4 py-3 font-semibold">الوقت</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border-subtle">
+                      {isLoadingAuditLogs ? (
+                        <tr><td colSpan="5" className="p-4 text-center">جاري التحميل...</td></tr>
+                      ) : auditLogs.length === 0 ? (
+                        <tr><td colSpan="5" className="p-4 text-center">لا توجد نشاطات</td></tr>
+                      ) : (
+                        auditLogs.map((log) => (
+                          <tr key={log.id} className="hover:bg-background-subtle/50 transition-colors">
+                            <td className="px-4 py-3 text-xs font-mono text-muted">{log.id}</td>
+                            <td className="px-4 py-3">{log.emp_id || "نظام"}</td>
+                            <td className="px-4 py-3 font-medium text-primary">{log.action}</td>
+                            <td className="px-4 py-3">
+                              <Badge variant="outline">{log.entity_type}</Badge>
+                            </td>
+                            <td className="px-4 py-3 text-xs text-muted ltr">
+                              {new Date(log.created_at).toLocaleString("ar-JO")}
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
                 </div>
               </CardBody>
             </Card>

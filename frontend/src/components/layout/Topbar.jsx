@@ -5,6 +5,8 @@ import { useUiStore, useNotificationsStore } from "@/store";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/use-auth";
+import { useNotifications } from "@/features/notifications/hooks/use-notifications";
+import { useState, useRef, useEffect } from "react";
 
 export function Topbar({ title = "منصة العمليات الذكية" }) {
   const isDesktop = useMediaQuery("(min-width: 1024px)");
@@ -13,14 +15,28 @@ export function Topbar({ title = "منصة العمليات الذكية" }) {
   const setMobileNavOpen = useUiStore((s) => s.setMobileNavOpen);
   const navigate = useNavigate();
   const { user, clearSession } = useAuth();
+  const [showNotifications, setShowNotifications] = useState(false);
+  const notificationsRef = useRef(null);
+
+  const { data: notificationsData, isLoading: isLoadingNotifications } = useNotifications();
+  const apiNotifications = notificationsData?.data || [];
+  
+  const unreadCount = apiNotifications.filter((n) => n.status === 'UNREAD').length;
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (notificationsRef.current && !notificationsRef.current.contains(event.target)) {
+        setShowNotifications(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const handleLogout = () => {
     clearSession();
     navigate("/login", { replace: true });
   };
-  const unreadCount = useNotificationsStore(
-    (s) => s.items.filter((n) => !n.read).length
-  );
 
   const displayName = user?.name ?? "مدير النظام";
   const displayRole =
@@ -74,17 +90,44 @@ export function Topbar({ title = "منصة العمليات الذكية" }) {
       </div>
 
       <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
-        <IconButton
-          aria-label={`الإشعارات${unreadCount ? `، ${unreadCount} غير مقروء` : ""}`}
-          className="relative"
-        >
-          <Bell className="h-4 w-4" />
-          {unreadCount > 0 && (
-            <span className="absolute end-1 top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-error px-1 text-[10px] font-medium text-white ring-2 ring-surface">
-              {unreadCount > 9 ? "9+" : unreadCount}
-            </span>
+        <div className="relative" ref={notificationsRef}>
+          <IconButton
+            aria-label={`الإشعارات${unreadCount ? `، ${unreadCount} غير مقروء` : ""}`}
+            className="relative"
+            onClick={() => setShowNotifications(!showNotifications)}
+          >
+            <Bell className="h-4 w-4" />
+            {unreadCount > 0 && (
+              <span className="absolute end-1 top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-error px-1 text-[10px] font-medium text-white ring-2 ring-surface">
+                {unreadCount > 9 ? "9+" : unreadCount}
+              </span>
+            )}
+          </IconButton>
+
+          {showNotifications && (
+            <div className="absolute end-0 top-full mt-2 w-80 rounded-xl border border-border-subtle bg-surface shadow-lg overflow-hidden">
+              <div className="border-b border-border-subtle p-3 flex justify-between items-center bg-background">
+                <h3 className="font-semibold text-primary text-sm">الإشعارات</h3>
+                {unreadCount > 0 && <span className="text-[10px] text-muted cursor-pointer hover:text-primary">تحديد الكل كمقروء</span>}
+              </div>
+              <div className="max-h-80 overflow-y-auto divide-y divide-border-subtle">
+                {isLoadingNotifications ? (
+                  <div className="p-4 text-center text-xs text-muted">جاري التحميل...</div>
+                ) : apiNotifications.length === 0 ? (
+                  <div className="p-8 text-center text-xs text-muted">لا توجد إشعارات جديدة</div>
+                ) : (
+                  apiNotifications.map((notif) => (
+                    <div key={notif.id} className={`p-3 text-start hover:bg-background-subtle transition-colors cursor-pointer ${notif.status === 'UNREAD' ? 'bg-accent-muted/20' : ''}`}>
+                      <p className="text-xs font-medium text-primary mb-1">{notif.title}</p>
+                      <p className="text-[11px] text-muted leading-tight">{notif.content}</p>
+                      <p className="text-[9px] text-subtle mt-2 ltr text-start">{new Date(notif.created_at).toLocaleString('ar-JO')}</p>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
           )}
-        </IconButton>
+        </div>
 
         <IconButton aria-label="الوضع الليلي (قريباً)" disabled>
           <Moon className="h-4 w-4 opacity-50" />
@@ -108,6 +151,11 @@ export function Topbar({ title = "منصة العمليات الذكية" }) {
             <p className="text-[10px] text-subtle group-hover:text-error/80">{displayRole}</p>
           </div>
         </button>
+        
+        {/* JEA Logo on the Top Left Corner */}
+        <div className="hidden sm:block ms-2 border-s border-border-subtle ps-4">
+          <img src="/logo.png" alt="JEA Logo" className="h-8 w-auto object-contain" />
+        </div>
       </div>
     </header>
   );

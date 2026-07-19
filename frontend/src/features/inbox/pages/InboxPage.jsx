@@ -10,6 +10,7 @@ import {
   FileText,
   Megaphone,
   ArrowRight,
+  Star,
 } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { PageContainer, SectionHeader } from "@/components/layout";
@@ -23,6 +24,8 @@ import { Modal } from "@/components/ui/Modal";
 import { CONVERSATIONS } from "../data/mock";
 import { useInboxConversations } from "../hooks/use-inbox-conversations";
 import { useConversationMessages } from "../hooks/use-conversation-messages";
+import { useRatings } from "@/features/ratings/hooks/use-ratings";
+import { useCustomers } from "@/features/customers/hooks/use-customers";
 import { conversationsService } from "@/services/conversations";
 import { APP_CONFIG } from "@/config/app";
 
@@ -70,9 +73,13 @@ export function InboxPage() {
     mutationFn: ({ to, text }) => conversationsService.sendWhatsAppMessage(to, text),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["conversations"] });
+      queryClient.invalidateQueries({ queryKey: ["messages"] });
       setTypedMessage("");
     }
   });
+
+  const { data: ratingsData } = useRatings({ enabled: APP_CONFIG.apiEnabled });
+  const { data: customersData } = useCustomers({ enabled: APP_CONFIG.apiEnabled });
 
   // Broadcast Modal State
   const [isBroadcastOpen, setIsBroadcastOpen] = useState(false);
@@ -86,32 +93,45 @@ export function InboxPage() {
   // Sync API data if enabled
   useEffect(() => {
     if (APP_CONFIG.apiEnabled && apiData?.items) {
+      const allCustomers = customersData?.data || [];
+      const allRatings = ratingsData?.data || [];
+
       const apiConversations = apiData.items.map(apiConv => {
         const existing = conversations.find(c => c.id === apiConv.id);
         const messages = existing?.messages?.length > (apiConv.raw?.messages?.length || 0)
           ? existing.messages
           : apiConv.raw?.messages?.map((m, idx) => ({
               id: m._id || idx,
-              role: m.sender === "bot" ? "ai" : m.sender,
-              text: m.body,
+              role: m.sender === "bot" || m.sender === "SERVER" ? "ai" : "user",
+              text: m.body || m.content || "",
               time: m.createdAt ? new Date(m.createdAt).toLocaleTimeString("ar-JO", { hour: "2-digit", minute: "2-digit" }) : "غير محدد"
             })) || [];
 
+        // Match rating
+        let sessionPhone = String(apiConv.id);
+        if (!sessionPhone.startsWith('+')) {
+          sessionPhone = '+' + sessionPhone;
+        }
+        
+        const customer = allCustomers.find(c => c.phone === sessionPhone || c.phone === apiConv.id);
+        const sessionRating = customer ? allRatings.find(r => r.user_id === customer.member_id) : null;
+
         return {
           id: apiConv.id,
-          name: apiConv.name || apiConv.id || "عضو نقابة",
-          topic: apiConv.topic || "استفسار عام",
-          preview: apiConv.preview || "",
+          name: customer ? customer.name || apiConv.id : (apiConv.name || apiConv.id || "عضو نقابة"),
+          topic: apiConv.topic || "استفسار",
+          preview: messages[messages.length - 1]?.text || "",
           time: apiConv.time ? new Date(apiConv.time).toLocaleTimeString("ar-JO", { hour: "2-digit", minute: "2-digit" }) : "",
-          verified: apiConv.verified,
+          verified: apiConv.verified || !!customer,
           unread: apiConv.unread,
-          phone: apiConv.raw?.customerPhone || apiConv.id || "",
-          memberId: apiConv.raw?.memberId || "غير محدد",
+          phone: apiConv.id || "",
+          memberId: customer ? customer.member_id : "غير محدد",
           joinYear: apiConv.raw?.joinYear || "2020",
-          statusSubscription: apiConv.raw?.membershipStatus || "نشط",
+          statusSubscription: customer ? customer.role : "نشط",
           trustLevel: apiConv.raw?.trustLevel || 90,
           messages: messages,
-          status: apiConv.status || "OPEN"
+          status: apiConv.status || "OPEN",
+          ratingValue: sessionRating ? sessionRating.rate_value : null
         };
       });
 
@@ -138,8 +158,11 @@ export function InboxPage() {
     if (e) e.preventDefault();
     if (!typedMessage.trim() || !selected) return;
 
-    if (APP_CONFIG.apiEnabled && selected.phone) {
+    if (APP_CONFIG.apiEnabled) {
+      // For WhatsApp simulation or real API, we can either post to messages or use whatsapp send endpoint
       sendMutation.mutate({ to: selected.phone, text: typedMessage });
+      // We can also optimistically update the conversation messages in cache if we want
+      // But we will let React Query refetch
     } else {
       const newMsg = {
         id: Date.now(),
@@ -324,11 +347,24 @@ export function InboxPage() {
                       <p className="truncate text-[11px] text-muted text-start">
                         {c.preview}
                       </p>
-                      {c.status === "CLOSED" && (
-                        <span className="shrink-0 rounded bg-red-50 px-1.5 py-0.5 text-[9px] font-medium text-red-600 dark:bg-red-500/10">
-                          مغلقة
-                        </span>
-                      )}
+                      <div className="flex items-center gap-1 shrink-0">
+                        {c.ratingValue && (
+                          <div className="flex text-yellow-400" title={`تقييم: ${c.ratingValue}`}>
+                            {Array.from({ length: 5 }).map((_, i) => (
+                              <Star key={i} className={`h-2.5 w-2.5 ${i < c.ratingValue ? "fill-current" : "text-gray-300"}`} />
+                            ))}
+                          </div>
+                        )}
+                        {c.status === "CLOSED" ? (
+                          <span className="rounded bg-red-50 px-1.5 py-0.5 text-[9px] font-medium text-red-600 dark:bg-red-500/10">
+                            مغلقة
+                          </span>
+                        ) : (
+                          <span className="rounded bg-green-50 px-1.5 py-0.5 text-[9px] font-medium text-green-600 dark:bg-green-500/10">
+                            مفتوحة
+                          </span>
+                        )}
+                      </div>
                     </div>
                     {c.unread && (
                       <span className="absolute end-4 bottom-4 h-2 w-2 rounded-full bg-primary animate-pulse" />

@@ -4,23 +4,23 @@
  */
 
 :root {
-  /* Brand */
-  --color-primary: #062b5b;
-  --color-primary-hover: #0b3d91;
-  --color-primary-active: #051f45;
-  --color-primary-muted: #1a4f8c;
+  /* Brand — JEA Official Visual Identity */
+  --color-primary: #0082BE;
+  --color-primary-hover: #006B9E;
+  --color-primary-active: #005680;
+  --color-primary-muted: #5a5a5a;
 
-  --color-accent: #3d8fd1;
-  --color-accent-hover: #2f7ab8;
-  --color-accent-subtle: #dceaf7;
-  --color-accent-muted: #e8f2fa;
+  --color-accent: #414141;
+  --color-accent-hover: #333333;
+  --color-accent-subtle: #E0F0F9;
+  --color-accent-muted: #ECF5FB;
 
   /* Surfaces */
   --color-background: #f5f7fa;
   --color-surface: #ffffff;
   --color-surface-raised: #ffffff;
   --color-surface-sunken: #edf2f7;
-  --color-overlay: rgb(6 43 91 / 0.45);
+  --color-overlay: rgb(65 65 65 / 0.45);
 
   /* Borders */
   --color-border: #e2e8f0;
@@ -28,9 +28,9 @@
   --color-border-strong: #c5d4e3;
 
   /* Text */
-  --color-text: #062b5b;
-  --color-text-secondary: #5a6b7d;
-  --color-text-tertiary: #8b9aab;
+  --color-text: #414141;
+  --color-text-secondary: #6b7280;
+  --color-text-tertiary: #9ca3af;
   --color-text-inverse: #ffffff;
   --color-text-on-primary: #ffffff;
 
@@ -47,9 +47,9 @@
   --color-error-subtle: #fef2f2;
   --color-error-border: #fecaca;
 
-  --color-info: #0b3d91;
-  --color-info-subtle: #e8f2fa;
-  --color-info-border: #bfdbfe;
+  --color-info: #0082BE;
+  --color-info-subtle: #ECF5FB;
+  --color-info-border: #b3d9ed;
 
   /* Typography */
   --font-family-sans: "IBM Plex Sans Arabic", system-ui, sans-serif;
@@ -103,10 +103,10 @@
   --radius-full: 9999px;
 
   /* Shadows */
-  --shadow-sm: 0 1px 2px 0 rgb(6 43 91 / 0.04);
-  --shadow-md: 0 4px 12px -2px rgb(6 43 91 / 0.08);
-  --shadow-lg: 0 8px 24px -4px rgb(6 43 91 / 0.1);
-  --shadow-focus: 0 0 0 3px rgb(61 143 209 / 0.25);
+  --shadow-sm: 0 1px 2px 0 rgb(65 65 65 / 0.04);
+  --shadow-md: 0 4px 12px -2px rgb(65 65 65 / 0.08);
+  --shadow-lg: 0 8px 24px -4px rgb(65 65 65 / 0.1);
+  --shadow-focus: 0 0 0 3px rgb(0 130 190 / 0.25);
 
   /* Motion */
   --ease-default: cubic-bezier(0.4, 0, 0.2, 1);

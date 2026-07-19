@@ -70,11 +70,11 @@ export function LoginPage() {
       <div className="w-full max-w-md rounded-2xl border border-border-subtle bg-surface p-8 shadow-jea-lg relative z-10">
         <div className="flex flex-col items-center text-center">
           {/* JEA Logo Mark */}
-          <div className="relative h-16 w-16 rounded-xl bg-white overflow-hidden p-1 shadow-sm border border-border-subtle mb-4">
+          <div className="relative h-16 w-full max-w-[200px] bg-white overflow-hidden p-2 flex items-center justify-center mb-4">
             <img 
               src="/logo.png" 
               alt="JEA Logo" 
-              className="absolute top-0 left-0 h-[175%] w-full object-cover object-top" 
+              className="h-full w-full object-contain" 
             />
           </div>
           <h2 className="text-lg font-bold text-primary">نقابة المهندسين الأردنيين</h2>

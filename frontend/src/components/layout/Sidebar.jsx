@@ -10,13 +10,13 @@ const logoImg = "/logo.png";
 function JeaLogoMark() {
   return (
     <div
-      className="relative h-12 w-12 shrink-0 rounded-lg bg-white overflow-hidden p-1 ring-1 ring-white/20"
+      className="relative h-12 w-full shrink-0 px-2 flex items-center justify-center overflow-hidden"
       aria-hidden
     >
       <img 
         src={logoImg} 
         alt="JEA Logo" 
-        className="absolute top-0 left-0 h-[175%] w-full object-cover object-top" 
+        className="h-full w-full object-contain filter brightness-0 invert opacity-90" 
       />
     </div>
   );

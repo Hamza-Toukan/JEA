@@ -19,3 +19,4 @@ export { messagesService } from "./messages";
 export { sessionsService } from "./sessions";
 export { customersService } from "./customers";
 export { employeesService } from "./employees";
+export { ticketsService } from "./tickets";

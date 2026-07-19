@@ -7,9 +7,9 @@
   .ui-gradient-sidebar {
     background: linear-gradient(
       180deg,
-      #073264 0%,
-      var(--color-primary) 55%,
-      var(--color-primary-active) 100%
+      #0b162c 0%,
+      var(--color-primary-active) 55%,
+      var(--color-primary) 100%
     );
   }
 
@@ -70,9 +70,9 @@
   .jea-gradient-sidebar {
     background: linear-gradient(
       180deg,
-      #073264 0%,
-      var(--color-primary) 55%,
-      var(--color-primary-active) 100%
+      #0b162c 0%,
+      var(--color-primary-active) 55%,
+      var(--color-primary) 100%
     );
   }
 
